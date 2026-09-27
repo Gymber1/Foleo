@@ -2594,3 +2594,49 @@ body.dragover .canvas-wrap {
     display: none;
   }
 }
+
+/* ---------- Barra de acción compacta ---------- */
+.action-card {
+  padding: 12px;
+  gap: 10px;
+}
+.action-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.action-row .btn-cta {
+  flex: 1;
+  width: auto;
+  padding: 11px 14px;
+  font-size: 15px;
+  gap: 10px;
+}
+.action-row .reset-btn {
+  flex: none;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--soft-2-border);
+  background: var(--soft-2-bg);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.action-row .reset-btn:hover {
+  background: var(--soft-2-hover);
+  color: var(--text);
+}
+.action-row .reset-btn .i {
+  width: 14px;
+  height: 14px;
+}
+@media (max-width: 420px) {
+  .action-row .reset-btn {
+    font-size: 0;
+    gap: 0;
+    padding: 0 13px;
+  }
+  .action-row .reset-btn .i {
+    width: 16px;
+    height: 16px;
+  }
+}

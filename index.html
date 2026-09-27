@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.4" />
+    <link rel="stylesheet" href="css/styles.css?v=2.4.5" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -440,10 +440,15 @@
 
         <!-- Acción -->
         <section class="card action-card">
-          <button id="btnFoliar" class="btn-cta" disabled>
-            <span id="btnFoliarTxt">Foliar Documentos</span>
-            <span class="cta-arrow"><svg class="i"><use href="#i-arrow-right" /></svg></span>
-          </button>
+          <div class="action-row">
+            <button id="btnFoliar" class="btn-cta" disabled>
+              <span id="btnFoliarTxt">Foliar Documentos</span>
+              <span class="cta-arrow"><svg class="i"><use href="#i-arrow-right" /></svg></span>
+            </button>
+            <button type="button" class="reset-btn" id="btnReset" title="Restablecer todos los ajustes a sus valores por defecto">
+              <svg class="i"><use href="#i-refresh" /></svg> Valores por defecto
+            </button>
+          </div>
           <div class="progress" id="progreso" hidden>
             <div class="bar"><div class="fill" id="progresoFill"></div></div>
             <div class="plabel" id="progresoTxt"></div>
@@ -460,18 +465,6 @@
               <a class="btn-primary" id="btnDescargar" download><svg class="i"><use href="#i-download" /></svg> Descargar</a>
               <a class="btn-ghost" id="btnAbrir" target="_blank" rel="noopener"><svg class="i"><use href="#i-external" /></svg> Abrir</a>
             </div>
-          </div>
-          <div class="action-foot">
-            <button type="button" class="reset-btn" id="btnReset">
-              <svg class="i"><use href="#i-refresh" /></svg> Valores por defecto
-            </button>
-            <span class="foot-right">
-              <span class="local" title="Tus archivos se procesan en tu equipo; nada se sube a internet">
-                <span class="ping"><span></span><span></span></span>
-                Procesamiento Local
-              </span>
-              <span class="version">v2.4.4</span>
-            </span>
           </div>
         </section>
       </aside>
@@ -547,10 +540,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.4.4"></script>
-    <script src="js/fuentes.js?v=2.4.4"></script>
-    <script src="js/formato.js?v=2.4.4"></script>
-    <script src="js/word.js?v=2.4.4"></script>
-    <script src="js/app.js?v=2.4.4"></script>
+    <script src="js/ttc.js?v=2.4.5"></script>
+    <script src="js/fuentes.js?v=2.4.5"></script>
+    <script src="js/formato.js?v=2.4.5"></script>
+    <script src="js/word.js?v=2.4.5"></script>
+    <script src="js/app.js?v=2.4.5"></script>
   </body>
 </html>
