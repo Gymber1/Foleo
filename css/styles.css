@@ -3214,12 +3214,3 @@ body.modal-abierto {
   z-index: 300;
   pointer-events: none; /* solo informan: no deben tapar botones */
 }
-/* Con la ventana abierta los avisos salen arriba, para no tapar sus botones */
-body.modal-abierto .toasts {
-  top: 16px;
-  bottom: auto;
-  right: auto;
-  left: 50%;
-  transform: translateX(-50%);
-  align-items: center;
-}
