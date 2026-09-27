@@ -363,8 +363,9 @@
     if (cfg.posicion === "custom") {
       let cx = num(cfg.customX, 50, 0, 100) / 100;
       if (espejo) cx = 1 - cx;
-      bx = cx * vw - bw / 2;
-      by = (num(cfg.customY, 50, 0, 100) / 100) * vh - bh / 2;
+      // se centra en el punto elegido, pero sin salirse de la hoja
+      bx = Math.min(Math.max(cx * vw - bw / 2, 0), Math.max(0, vw - bw));
+      by = Math.min(Math.max((num(cfg.customY, 50, 0, 100) / 100) * vh - bh / 2, 0), Math.max(0, vh - bh));
     } else {
       const v = cfg.posicion[0];
       horiz = cfg.posicion[1];
@@ -1032,6 +1033,7 @@
       cambio(true);
     };
     lienzo.addEventListener("pointerdown", (ev) => {
+      if (cfg.posicion !== "custom") return; // solo con «Posición libre»
       arrastrando = true;
       $("canvasWrap").classList.add("arrastrando");
       lienzo.setPointerCapture(ev.pointerId);
@@ -1340,6 +1342,7 @@
     marcar("[data-pos]", (b) => b.dataset.pos === cfg.posicion);
 
     const libre = cfg.posicion === "custom";
+    $("canvasWrap").classList.toggle("libre", libre);
     $("camposLibre").hidden = !libre;
     $("camposMargen").hidden = libre;
     document.querySelector(".color-a").style.setProperty("--swatch", cfg.color);

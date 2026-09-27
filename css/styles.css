@@ -2123,12 +2123,17 @@ input[type="range"] {
   margin: auto;
   line-height: 0;
   box-shadow: var(--page-shadow), 0 0 0 1px var(--page-ring);
-  touch-action: none;
   flex: none;
 }
 .canvas-wrap canvas {
   display: block;
   background: #fff;
+}
+/* Solo con «Posición libre» la página sirve para colocar el folio */
+.canvas-wrap.libre {
+  touch-action: none;
+}
+.canvas-wrap.libre canvas {
   cursor: crosshair;
 }
 body.dragover .canvas-wrap {
