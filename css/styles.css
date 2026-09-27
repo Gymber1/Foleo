@@ -3214,3 +3214,39 @@ body.modal-abierto {
   z-index: 300;
   pointer-events: none; /* solo informan: no deben tapar botones */
 }
+
+/* Botón para cerrar un aviso (lo único del aviso que recibe clics) */
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding-right: 8px;
+}
+.toast-txt {
+  flex: 1;
+  padding-top: 2px;
+}
+.toast-x {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: -1px 0 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted-2);
+  pointer-events: auto;
+  cursor: pointer;
+}
+.toast-x:hover,
+.toast-x:focus-visible {
+  background: var(--tab-hover-bg);
+  color: var(--text);
+  outline: none;
+}
+.toast-x .i {
+  width: 14px;
+  height: 14px;
+}

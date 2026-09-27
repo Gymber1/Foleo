@@ -1679,7 +1679,18 @@
   function aviso(texto, tipo = "info", ms = 4500) {
     const t = document.createElement("div");
     t.className = `toast ${tipo}`;
-    t.textContent = texto;
+    t.setAttribute("role", tipo === "err" ? "alert" : "status");
+    const msg = document.createElement("span");
+    msg.className = "toast-txt";
+    msg.textContent = texto;
+    const x = document.createElement("button");
+    x.type = "button";
+    x.className = "toast-x";
+    x.title = "Cerrar aviso";
+    x.setAttribute("aria-label", "Cerrar aviso");
+    x.append(icono("x"));
+    x.addEventListener("click", () => t.remove());
+    t.append(msg, x);
     $("toasts").append(t);
     setTimeout(() => t.remove(), ms);
   }
