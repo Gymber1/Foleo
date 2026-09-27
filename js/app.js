@@ -158,6 +158,35 @@
   const buscarFuente = (id) =>
     Fuentes.lista.find((f) => f.id === id) || fuentesUsuario.find((f) => f.id === id) || Fuentes.lista[0];
 
+  // Si el archivo es una colección (.ttc), devuelve solo la fuente pedida (o la primera)
+  function fuenteSuelta(buffer, postscriptName) {
+    if (!TTC.esColeccion(buffer)) return buffer;
+    let indice = 0;
+    try {
+      const i = fontkit.create(new Uint8Array(buffer)).fonts.findIndex((f) => f.postscriptName === postscriptName);
+      if (i >= 0) indice = i;
+    } catch (e) {}
+    return TTC.extraer(buffer, indice);
+  }
+
+  // Igual que obtenerFuente, pero si la fuente no se puede usar se recurre a Helvetica y se avisa
+  const fuentesConFallo = new Set();
+  async function obtenerFuenteSegura(doc) {
+    try {
+      return await obtenerFuente(doc);
+    } catch (e) {
+      console.error(e);
+      const def = buscarFuente(cfg.fuente);
+      if (!fuentesConFallo.has(def.id)) {
+        fuentesConFallo.add(def.id);
+        aviso(`La fuente "${def.nombre}" no se pudo usar en el PDF; se usará Helvetica. Prueba con otra fuente.`, "warn", 9000);
+      }
+      const variante = (cfg.negrita ? "b" : "") + (cfg.cursiva ? "i" : "") || "n";
+      const std = Fuentes.lista[0].std[variante];
+      return { font: await doc.embedFont(StandardFonts[std]), falsaNegrita: false, falsaCursiva: false };
+    }
+  }
+
   async function obtenerFuente(doc) {
     const def = buscarFuente(cfg.fuente);
     const b = !!cfg.negrita;
@@ -188,7 +217,9 @@
       falsaNegrita = b && !elegida.includes("b");
       falsaCursiva = i && !elegida.includes("i");
       const fd = def.variantes[elegida];
-      bytes = await bytesDe(`sys:${fd.postscriptName}`, async () => (await fd.blob()).arrayBuffer());
+      bytes = await bytesDe(`sys:${fd.postscriptName}`, async () =>
+        fuenteSuelta(await (await fd.blob()).arrayBuffer(), fd.postscriptName)
+      );
     } else {
       bytes = def.bytes;
       falsaNegrita = b;
@@ -214,8 +245,9 @@
     const { font } = fx;
     const s = num(cfg.tamano, 12, 4, 200);
     const salto = s * num(cfg.interlineado, 1.15, 0.8, 3);
-    const asc = font.heightAtSize(s, { descender: false });
-    const desc = Math.max(0, font.heightAtSize(s) - asc) * 0.6;
+    // Se limitan las métricas: algunas fuentes (p. ej. Cambria Math) declaran alturas enormes
+    const asc = Math.min(font.heightAtSize(s, { descender: false }), s * 1.05);
+    const desc = Math.min(Math.max(0, font.heightAtSize(s) - font.heightAtSize(s, { descender: false })), s * 0.35) * 0.6;
     const anchos = lineas.map((t) => font.widthOfTextAtSize(t, s));
     const cw = Math.max(...anchos) + (fx.falsaCursiva ? s * 0.15 : 0);
     const ch = asc + desc + (lineas.length - 1) * salto;
@@ -529,7 +561,7 @@
       const [pag] = await doc.copyPages(srcDoc, [paginaActual]);
       doc.addPage(pag);
       if (n !== undefined) {
-        const fx = await obtenerFuente(doc);
+        const fx = await obtenerFuenteSegura(doc);
         foliarPagina(pag, fx, plan, paginaActual);
       }
       const bytes = await doc.save();
@@ -722,7 +754,7 @@
       const total = doc.getPageCount();
       const plan = planFoliado(total);
       if (!plan.cantidad) throw new Error("Con estos ajustes no hay ninguna página para foliar.");
-      const fx = await obtenerFuente(doc);
+      const fx = await obtenerFuenteSegura(doc);
       const paginas = doc.getPages();
       let hechas = 0;
       for (const idx of plan.mapa.keys()) {
@@ -1074,9 +1106,9 @@
       e.target.value = "";
       if (!f) return;
       try {
-        const bytes = await f.arrayBuffer();
+        const bytes = fuenteSuelta(await f.arrayBuffer());
         const info = fontkit.create(new Uint8Array(bytes));
-        if (!info || typeof info.layout !== "function") throw new Error("formato no compatible (usa .ttf u .otf)");
+        if (!info || typeof info.layout !== "function") throw new Error("formato no compatible (usa .ttf, .otf o .ttc)");
         const id = `subida-${++contadorSubidas}`;
         const familia = `FU-${contadorSubidas}`;
         const ff = new FontFace(familia, bytes.slice(0));

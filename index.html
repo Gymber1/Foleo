@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.1" />
+    <link rel="stylesheet" href="css/styles.css?v=2.4.2" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -279,7 +279,7 @@
                       <input type="search" id="fpBuscar" placeholder="Buscar fuente (ej. Arial, Calibri…)" autocomplete="off" />
                       <div class="fp-list" id="fpLista" role="listbox"></div>
                       <div class="fp-actions">
-                        <button type="button" class="btn-ghost" id="btnSubirFuente">＋ Subir .ttf/.otf</button>
+                        <button type="button" class="btn-ghost" id="btnSubirFuente">＋ Subir .ttf/.otf/.ttc</button>
                         <button type="button" class="btn-ghost" id="btnFuentesPC">🖥 Fuentes de mi PC</button>
                       </div>
                     </div>
@@ -486,7 +486,7 @@
             <button type="button" class="reset-btn" id="btnReset">
               <svg class="i"><use href="#i-refresh" /></svg> Valores por defecto
             </button>
-            <span class="version">v2.4.0</span>
+            <span class="version">v2.4.2</span>
           </div>
         </section>
       </aside>
@@ -552,15 +552,16 @@
     </main>
 
     <input type="file" id="inputArchivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden />
-    <input type="file" id="inputFuente" accept=".ttf,.otf,font/ttf,font/otf" hidden />
+    <input type="file" id="inputFuente" accept=".ttf,.otf,.ttc,font/ttf,font/otf,font/collection" hidden />
     <div class="toasts" id="toasts" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/fuentes.js?v=2.4.1"></script>
-    <script src="js/formato.js?v=2.4.1"></script>
-    <script src="js/word.js?v=2.4.1"></script>
-    <script src="js/app.js?v=2.4.1"></script>
+    <script src="js/ttc.js?v=2.4.2"></script>
+    <script src="js/fuentes.js?v=2.4.2"></script>
+    <script src="js/formato.js?v=2.4.2"></script>
+    <script src="js/word.js?v=2.4.2"></script>
+    <script src="js/app.js?v=2.4.2"></script>
   </body>
 </html>
