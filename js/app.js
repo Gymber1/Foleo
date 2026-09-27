@@ -774,13 +774,19 @@
     $("btnMasGrupo").addEventListener("click", () => cambiarNumGrupos(numGrupos + 1));
     $("btnMenosGrupo").addEventListener("click", () => cambiarNumGrupos(numGrupos - 1));
     $("btnRepartir").addEventListener("click", repartirEnOrden);
-    // Al elegir «Grupos» se abre la ventana para armarlos
+    // Pulsar «Grupos» (aunque ya esté elegido) abre la ventana para armarlos
+    document.querySelectorAll('input[name="modoVarios"][value="grupos"]').forEach((r) =>
+      r.addEventListener("click", () => {
+        const yaEraGrupos = cfg.modoVarios === "grupos";
+        // se espera a que el cambio de modo se aplique antes de pintar la ventana
+        setTimeout(() => {
+          if ($("modalDocs").hidden) abrirModal();
+          if (!yaEraGrupos) aviso("Elige cuántos grupos quieres y marca los documentos de cada uno.", "info", 7000);
+        }, 0);
+      })
+    );
     document.querySelectorAll('input[data-cfg="modoVarios"]').forEach((r) =>
       r.addEventListener("change", () => {
-        if (r.checked && r.value === "grupos" && $("modalDocs").hidden) {
-          abrirModal();
-          aviso("Elige cuántos grupos quieres y marca los documentos de cada uno.", "info", 7000);
-        }
         if (!$("modalDocs").hidden) pintarArchivos();
       })
     );
