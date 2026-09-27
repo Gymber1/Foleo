@@ -1,395 +1,555 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Foleo · Foliar PDF</title>
+    <title>Foleo Pro · Foliar PDF</title>
     <meta
       name="description"
       content="Folia (numera) tus PDF y Word en el navegador: elige orden, página inicial, posición, fuente, formato y recuadro. Nada se sube a internet."
     />
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='10' y='4' width='44' height='56' rx='6' fill='%234f7cff'/><text x='32' y='42' font-family='Arial' font-weight='700' font-size='24' text-anchor='middle' fill='white'>01</text></svg>"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236366f1'/><stop offset='1' stop-color='%232563eb'/></linearGradient></defs><rect width='64' height='64' rx='16' fill='url(%23g)'/><text x='32' y='44' font-family='Arial' font-weight='700' font-size='32' text-anchor='middle' fill='white'>F</text></svg>"
     />
     <script>
       try {
         var t = localStorage.getItem("foleo.tema");
-        if (t) document.documentElement.dataset.theme = t;
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
-    <header class="topbar">
+    <!-- Iconos (Lucide) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+      <symbol id="i-type" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></symbol>
+      <symbol id="i-layout" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></symbol>
+      <symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/></symbol>
+      <symbol id="i-rounded" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="7"/></symbol>
+      <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.750 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+      <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+      <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-move" viewBox="0 0 24 24"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/></symbol>
+      <symbol id="i-corner" viewBox="0 0 24 24"><polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-align-left" viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></symbol>
+      <symbol id="i-align-center" viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="17" x2="7" y1="12" y2="12"/><line x1="19" x2="5" y1="18" y2="18"/></symbol>
+      <symbol id="i-align-right" viewBox="0 0 24 24"><line x1="21" x2="3" y1="6" y2="6"/><line x1="21" x2="9" y1="12" y2="12"/><line x1="21" x2="7" y1="18" y2="18"/></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></symbol>
+      <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.580 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/></symbol>
+      <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></symbol>
+    </svg>
+
+    <div class="bg-glow" aria-hidden="true"><span></span><span></span></div>
+
+    <!-- ================= Cabecera ================= -->
+    <header class="header">
       <div class="brand">
-        <div class="logo" aria-hidden="true">01</div>
+        <div class="brand-logo">F</div>
         <div>
-          <h1>Foleo</h1>
-          <p>Foliado de PDF y Word personalizable · 100% en tu navegador</p>
+          <h1>Foleo <span>Pro</span></h1>
+          <p>Advanced Document Numbering</p>
         </div>
       </div>
-      <button id="btnTema" class="icon-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18V4a8 8 0 0 1 0 16Z"/></svg>
-      </button>
+      <div class="header-right">
+        <div class="local">
+          <span class="ping"><span></span><span></span></span>
+          Procesamiento Local
+        </div>
+        <div class="vsep"></div>
+        <button id="btnTema" class="theme-btn" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
+          <svg class="i ic-sun"><use href="#i-sun" /></svg>
+          <svg class="i ic-moon"><use href="#i-moon" /></svg>
+        </button>
+      </div>
     </header>
 
-    <main class="layout">
-      <!-- ============ PANEL DE AJUSTES ============ -->
-      <aside class="panel">
+    <main class="workspace">
+      <!-- ================= Panel izquierdo ================= -->
+      <aside class="aside">
         <!-- Archivos -->
-        <section class="card compact">
-          <div class="card-head">
-            <h2>Archivos</h2>
-            <div class="row">
-              <button id="btnQuitarTodo" class="btn small ghost" hidden>Quitar todo</button>
-              <button id="btnAgregar" class="btn small">＋ Agregar PDF o Word</button>
+        <section class="card upload-card">
+          <svg class="i deco-monitor" aria-hidden="true"><use href="#i-monitor" /></svg>
+          <div class="upload-inner">
+            <div class="upload-head">
+              <div>
+                <h2>Archivos Origen</h2>
+                <p>PDF o Word soportados</p>
+              </div>
+              <button id="btnAgregar" class="btn-primary sm">
+                <svg class="i"><use href="#i-plus" /></svg> Añadir
+              </button>
             </div>
+            <div class="dropzone" id="dropzone" tabindex="0" role="button">
+              <div class="dz-icon"><svg class="i"><use href="#i-pointer" /></svg></div>
+              <p>Arrastra documentos aquí o haz clic para explorar</p>
+            </div>
+            <ul id="listaArchivos" class="files"></ul>
+            <button id="btnQuitarTodo" class="link-btn" hidden>Quitar todos los archivos</button>
           </div>
-          <ul id="listaArchivos" class="files"></ul>
-          <p class="hint" id="hintArchivos">
-            Acepta <b>.pdf</b> y <b>.docx</b>. Varios archivos se unen en el orden de la lista.
-          </p>
         </section>
 
-        <!-- Ajustes en pestañas -->
-        <section class="card settings">
-          <nav class="tabs" role="tablist" aria-label="Ajustes del folio">
-            <button type="button" role="tab" data-tab="num">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3v10M10 7h4a2 2 0 0 1 0 4h-2a2 2 0 0 0 0 4h4M4 17h6"/></svg>
-              Numeración
+        <!-- Configuración -->
+        <section class="card config">
+          <nav class="tabs" role="tablist" aria-label="Ajustes">
+            <button type="button" role="tab" data-tab="basico">
+              <svg class="i"><use href="#i-sliders" /></svg><span>Básico</span>
             </button>
-            <button type="button" role="tab" data-tab="texto">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg>
-              Texto
+            <button type="button" role="tab" data-tab="formato">
+              <svg class="i"><use href="#i-type" /></svg><span>Formato</span>
             </button>
-            <button type="button" role="tab" data-tab="fuente">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 10 5l6 14M6.5 14h7M17 19v-7m0 0a2.5 2.5 0 1 1 3 2.4"/></svg>
-              Fuente
+            <button type="button" role="tab" data-tab="posicion">
+              <svg class="i"><use href="#i-move" /></svg><span>Posición</span>
             </button>
-            <button type="button" role="tab" data-tab="pos">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="13" y="6" width="3.5" height="3" rx=".5"/></svg>
-              Posición
-            </button>
-            <button type="button" role="tab" data-tab="caja">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="10" rx="3"/></svg>
-              Recuadro
+            <button type="button" role="tab" data-tab="diseno">
+              <svg class="i"><use href="#i-square" /></svg><span>Diseño</span>
             </button>
           </nav>
 
-          <!-- ===== Numeración ===== -->
-          <div class="tabpanel" data-panel="num" role="tabpanel">
-            <div class="field">
-              <span class="label">Orden del foliado</span>
-              <div class="seg wide" role="radiogroup">
-                <label class="segopt"><input type="radio" name="orden" value="inverso" data-cfg="orden" /><span>Última → primera</span></label>
-                <label class="segopt"><input type="radio" name="orden" value="normal" data-cfg="orden" /><span>Primera → última</span></label>
+          <div class="tab-content">
+            <!-- ===== Básico ===== -->
+            <div class="tabpanel" data-panel="basico" role="tabpanel">
+              <div class="stack-3">
+                <div class="section-title">
+                  <svg class="i accent"><use href="#i-layers" /></svg>
+                  <h3>Flujo de Numeración</h3>
+                </div>
+                <div class="segmented" role="radiogroup">
+                  <label class="seg-opt">
+                    <input type="radio" name="orden" value="normal" data-cfg="orden" />
+                    <span><svg class="i"><use href="#i-arrow-right" /></svg>Primera a Última</span>
+                  </label>
+                  <label class="seg-opt">
+                    <input type="radio" name="orden" value="inverso" data-cfg="orden" />
+                    <span><svg class="i"><use href="#i-arrow-right" /></svg>Última a Primera</span>
+                  </label>
+                </div>
+                <div class="info-box">
+                  <svg class="i"><use href="#i-info" /></svg>
+                  <p id="infoOrden"></p>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="grid-2">
+                <div class="stack-4">
+                  <label class="field">
+                    <span class="flabel">Página Inicial <span class="help" role="button" tabindex="0" data-ayuda="Primera página del archivo que se va a foliar. Las anteriores quedan sin número (útil para saltar una carátula o índice).">?</span></span>
+                    <input type="number" min="1" step="1" data-cfg="desde" id="inDesde" />
+                  </label>
+                  <label class="field">
+                    <span class="flabel">Aplicar a <span class="help" role="button" tabindex="0" data-ayuda="Todas: numera cada página. Solo impares: 1, 3, 5… (el anverso de cada hoja; útil si el documento está escaneado a doble cara y se folia por hoja). Solo pares: 2, 4, 6…">?</span></span>
+                    <span class="select">
+                      <select data-cfg="filtro">
+                        <option value="todas">Todas las páginas</option>
+                        <option value="pares">Solo pares</option>
+                        <option value="impares">Solo impares</option>
+                      </select>
+                      <svg class="i"><use href="#i-chevron-down" /></svg>
+                    </span>
+                  </label>
+                </div>
+                <div class="stack-4">
+                  <label class="field">
+                    <span class="flabel">Página Final <span class="help" role="button" tabindex="0" data-ayuda="Última página que se folia. Déjalo vacío para foliar hasta el final del documento.">?</span></span>
+                    <input type="number" min="1" step="1" data-cfg="hasta" id="inHasta" placeholder="Última" />
+                  </label>
+                  <label class="field">
+                    <span class="flabel">Excluir (ej. 1, 3-5) <span class="help" role="button" tabindex="0" data-ayuda="Páginas que no llevan folio ni se cuentan. Sepáralas con comas o usa rangos: «2, 5-7» salta las páginas 2, 5, 6 y 7.">?</span></span>
+                    <input type="text" data-cfg="excluir" placeholder="Opcional..." />
+                  </label>
+                </div>
+              </div>
+
+              <div class="soft-box row-between">
+                <span class="soft-label">Número de inicio <span class="help" role="button" tabindex="0" data-ayuda="Número con el que empieza la cuenta. Con «Última a Primera» lo lleva la última página; con «Primera a Última», la primera. Ej.: si ya foliaste 50 hojas en otro tomo, pon 51.">?</span></span>
+                <input type="number" min="0" step="1" data-cfg="inicio" class="w-24" aria-label="Número de inicio" />
+              </div>
+
+              <p class="plan" id="resumenPlan"></p>
+            </div>
+
+            <!-- ===== Formato ===== -->
+            <div class="tabpanel" data-panel="formato" role="tabpanel" hidden>
+              <div class="grid-2">
+                <label class="field">
+                  <span class="flabel">Formato <span class="help" role="button" tabindex="0" data-ayuda="Cómo se escribe el número: 1, 2, 3 · A, B, C · números romanos.">?</span></span>
+                  <span class="select">
+                    <select data-cfg="estilo">
+                      <option value="arabigo">1, 2, 3...</option>
+                      <option value="alfa-may">A, B, C...</option>
+                      <option value="alfa-min">a, b, c...</option>
+                      <option value="romano-may">I, II, III...</option>
+                      <option value="romano-min">i, ii, iii...</option>
+                    </select>
+                    <svg class="i"><use href="#i-chevron-down" /></svg>
+                  </span>
+                </label>
+                <label class="field">
+                  <span class="flabel">Ceros iniciales <span class="help" role="button" tabindex="0" data-ayuda="Rellena con ceros a la izquierda: 01, 001, 0001… Solo aplica al formato 1, 2, 3.">?</span></span>
+                  <span class="select">
+                    <select data-cfg="digitos" data-num="1">
+                      <option value="2">01</option>
+                      <option value="3">001</option>
+                      <option value="4">0001</option>
+                      <option value="1">Ninguno</option>
+                    </select>
+                    <svg class="i"><use href="#i-chevron-down" /></svg>
+                  </span>
+                </label>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="stack-3">
+                <div class="row-between end">
+                  <span class="flabel">Estructura del Texto <span class="help" role="button" tabindex="0" data-ayuda="Texto que se imprime en cada página. {n} = número de folio · {total} = último folio · {fecha} = fecha de hoy · {doc} = nombre del archivo · {letras} = número en palabras · {pag} = número real de la página. Puedes escribir varias líneas.">?</span></span>
+                  <div class="plantillas">
+                    <button type="button" class="text-link" id="btnPlantillas" aria-expanded="false">Ver plantillas</button>
+                    <div class="menu" id="menuPlantillas" hidden>
+                      <button type="button" data-plantilla="{n}">01</button>
+                      <button type="button" data-plantilla="Folio {n}">Folio 01</button>
+                      <button type="button" data-plantilla="Folio N° {n}">Folio N° 01</button>
+                      <button type="button" data-plantilla="Pág. {n} de {total}">Pág. 01 de 20</button>
+                      <button type="button" data-plantilla="{n}/{total}">01/20</button>
+                      <button type="button" data-plantilla="{n} ({letras})">01 (uno)</button>
+                      <button type="button" data-plantilla="{n}&#10;{letras}">01 ⏎ uno</button>
+                      <button type="button" data-plantilla="Folio {n}&#10;{letras}">Folio 01 ⏎ uno</button>
+                      <button type="button" data-plantilla="- {n} -">- 01 -</button>
+                      <button type="button" data-plantilla="{doc} · {n}">documento · 01</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="text-editor">
+                  <textarea
+                    data-cfg="plantilla"
+                    id="inPlantilla"
+                    spellcheck="false"
+                    placeholder="Ej: Página {n} de {total}"
+                    aria-label="Estructura del texto"
+                  ></textarea>
+                  <div class="tags">
+                    <button type="button" data-ins="{n}" title="Número de folio">+ {n}</button>
+                    <button type="button" data-ins="{total}" title="Último número de folio">+ {total}</button>
+                    <button type="button" data-ins="{fecha}" title="Fecha de hoy">+ {fecha}</button>
+                    <button type="button" data-ins="{doc}" title="Nombre del documento">+ {doc}</button>
+                    <button type="button" data-ins="{letras}" title="Número escrito en letras">+ {letras}</button>
+                    <button type="button" data-ins="{pag}" title="Número real de la página">+ {pag}</button>
+                  </div>
+                </div>
+                <label class="field">
+                  <span class="flabel">Número en letras <span class="help" role="button" tabindex="0" data-ayuda="Cómo se escribe {letras}: «veintiuno», «Veintiuno» o «VEINTIUNO».">?</span></span>
+                  <span class="select">
+                    <select data-cfg="letrasCaso">
+                      <option value="min">letras: minúsculas</option>
+                      <option value="cap">letras: Primera mayúscula</option>
+                      <option value="may">letras: MAYÚSCULAS</option>
+                    </select>
+                    <svg class="i"><use href="#i-chevron-down" /></svg>
+                  </span>
+                </label>
+              </div>
+
+              <div class="grid-2 fonts-row">
+                <div class="field">
+                  <span class="flabel">Tipografía</span>
+                  <div class="fontpicker" id="fontpicker">
+                    <button type="button" class="fp-btn" id="fpBtn" aria-haspopup="listbox" aria-expanded="false">
+                      <span id="fpLabel">Helvetica</span>
+                      <svg class="i"><use href="#i-chevron-down" /></svg>
+                    </button>
+                    <div class="fp-pop" id="fpPop" hidden>
+                      <input type="search" id="fpBuscar" placeholder="Buscar fuente (ej. Arial, Calibri…)" autocomplete="off" />
+                      <div class="fp-list" id="fpLista" role="listbox"></div>
+                      <div class="fp-actions">
+                        <button type="button" class="btn-ghost" id="btnSubirFuente">＋ Subir .ttf/.otf</button>
+                        <button type="button" class="btn-ghost" id="btnFuentesPC">🖥 Fuentes de mi PC</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <label class="field">
+                  <span class="flabel">Tamaño (pt)</span>
+                  <input type="number" min="4" max="200" step="0.5" list="tamanos" data-cfg="tamano" />
+                  <datalist id="tamanos">
+                    <option value="8"></option><option value="9"></option><option value="10"></option><option value="11"></option>
+                    <option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option>
+                    <option value="20"></option><option value="24"></option><option value="28"></option><option value="36"></option>
+                    <option value="48"></option><option value="72"></option>
+                  </datalist>
+                </label>
+              </div>
+
+              <div class="toolbar">
+                <div class="tgroup">
+                  <button type="button" class="tbtn" data-toggle="negrita" title="Negrita"><b>N</b></button>
+                  <button type="button" class="tbtn" data-toggle="cursiva" title="Cursiva"><i class="serif">K</i></button>
+                  <button type="button" class="tbtn" data-toggle="subrayado" title="Subrayado"><u>S</u></button>
+                </div>
+                <label class="tgroup color-tool" title="Color de fuente">
+                  <span class="color-a">A</span>
+                  <input type="color" data-cfg="color" aria-label="Color de fuente" />
+                </label>
+                <div class="tgroup" title="Alineación entre líneas">
+                  <button type="button" class="tbtn txt" data-alinear="auto" title="Automática según la posición">Auto</button>
+                  <button type="button" class="tbtn" data-alinear="izq" title="Izquierda"><svg class="i"><use href="#i-align-left" /></svg></button>
+                  <button type="button" class="tbtn" data-alinear="centro" title="Centro"><svg class="i"><use href="#i-align-center" /></svg></button>
+                  <button type="button" class="tbtn" data-alinear="der" title="Derecha"><svg class="i"><use href="#i-align-right" /></svg></button>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <label class="field">
+                  <span class="flabel">Opacidad <output id="outOpacidad"></output></span>
+                  <input type="range" min="10" max="100" step="5" data-cfg="opacidad" />
+                </label>
+                <label class="field">
+                  <span class="flabel">Interlineado</span>
+                  <span class="select">
+                    <select data-cfg="interlineado" data-num="1">
+                      <option value="1">1,0</option>
+                      <option value="1.15">1,15</option>
+                      <option value="1.5">1,5</option>
+                      <option value="2">2,0</option>
+                    </select>
+                    <svg class="i"><use href="#i-chevron-down" /></svg>
+                  </span>
+                </label>
+              </div>
+
+              <div class="font-preview">
+                <div class="fp-meta">
+                  <span class="eyebrow">Vista Previa de Fuente</span>
+                  <span class="muted-xs" id="notaFuente">Con los ajustes actuales</span>
+                </div>
+                <span class="fp-sample" id="ejemplo"></span>
               </div>
             </div>
-            <div class="grid3">
-              <label class="field">
-                <span class="label">Desde pág.</span>
-                <input type="number" min="1" step="1" data-cfg="desde" id="inDesde" />
-              </label>
-              <label class="field">
-                <span class="label">Hasta pág.</span>
-                <input type="number" min="1" step="1" data-cfg="hasta" id="inHasta" placeholder="Última" />
-              </label>
-              <label class="field">
-                <span class="label">N° inicial</span>
-                <input type="number" min="0" step="1" data-cfg="inicio" />
-              </label>
-            </div>
-            <div class="grid2">
-              <label class="field">
-                <span class="label">Qué páginas</span>
-                <select data-cfg="filtro">
-                  <option value="todas">Todas</option>
-                  <option value="impares">Solo impares (anverso)</option>
-                  <option value="pares">Solo pares (reverso)</option>
-                </select>
-              </label>
-              <label class="field">
-                <span class="label">Excluir páginas</span>
-                <input type="text" data-cfg="excluir" placeholder="ej. 2, 5-7" />
-              </label>
-            </div>
-            <p class="summary" id="resumenPlan"></p>
-          </div>
 
-          <!-- ===== Texto ===== -->
-          <div class="tabpanel" data-panel="texto" role="tabpanel" hidden>
-            <div class="grid2">
-              <label class="field">
-                <span class="label">Estilo del número</span>
-                <select data-cfg="estilo">
-                  <option value="arabigo">1, 2, 3…</option>
-                  <option value="romano-may">I, II, III…</option>
-                  <option value="romano-min">i, ii, iii…</option>
-                </select>
-              </label>
-              <label class="field">
-                <span class="label">Ceros a la izquierda</span>
-                <select data-cfg="digitos" data-num="1">
-                  <option value="1">Ninguno (1)</option>
-                  <option value="2">01</option>
-                  <option value="3">001</option>
-                  <option value="4">0001</option>
-                  <option value="5">00001</option>
-                </select>
-              </label>
-            </div>
-            <div class="field">
-              <div class="label-row">
-                <span class="label">Texto del folio</span>
-                <select id="selPlantilla" class="mini-select" title="Plantillas rápidas">
-                  <option value="">Plantillas…</option>
-                  <option value="{n}">01</option>
-                  <option value="Folio {n}">Folio 01</option>
-                  <option value="Folio N° {n}">Folio N° 01</option>
-                  <option value="{n} ({letras})">01 (uno)</option>
-                  <option value="{n}&#10;{letras}">01 ⏎ uno</option>
-                  <option value="Folio {n}&#10;{letras}">Folio 01 ⏎ uno</option>
-                  <option value="Página {n} de {total}">Página 01 de 20</option>
-                  <option value="{n}/{total}">01/20</option>
-                  <option value="- {n} -">- 01 -</option>
-                </select>
-              </div>
-              <textarea data-cfg="plantilla" id="inPlantilla" rows="2" spellcheck="false" aria-label="Texto del folio"></textarea>
-            </div>
-            <div class="chips">
-              <button type="button" class="chip" data-ins="{n}" title="Número de folio">{n}</button>
-              <button type="button" class="chip" data-ins="{letras}" title="Número escrito en letras">{letras}</button>
-              <button type="button" class="chip" data-ins="{total}" title="Último número de folio">{total}</button>
-              <button type="button" class="chip" data-ins="{pag}" title="Número real de la página en el archivo">{pag}</button>
-              <select data-cfg="letrasCaso" class="mini-select" title="Cómo escribir {letras}">
-                <option value="min">letras: minúsculas</option>
-                <option value="cap">letras: Primera mayúscula</option>
-                <option value="may">letras: MAYÚSCULAS</option>
-              </select>
-            </div>
-            <div class="example">Ejemplo: <span id="ejemplo"></span></div>
-          </div>
-
-          <!-- ===== Fuente ===== -->
-          <div class="tabpanel" data-panel="fuente" role="tabpanel" hidden>
-            <div class="toolbar" role="toolbar" aria-label="Formato de fuente">
-              <div class="fontpicker" id="fontpicker">
-                <button type="button" class="fp-btn" id="fpBtn" aria-haspopup="listbox" aria-expanded="false">
-                  <span id="fpLabel">Helvetica</span>
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+            <!-- ===== Posición ===== -->
+            <div class="tabpanel" data-panel="posicion" role="tabpanel" hidden>
+              <div class="stack-4">
+                <span class="flabel">Anclaje Rápido <span class="help" role="button" tabindex="0" data-ayuda="Elige en qué zona de la hoja va el folio. Los márgenes indican cuánto se separa del borde. Con «Posición libre» haces clic en la vista previa para ponerlo donde quieras.">?</span></span>
+                <div class="anchor-row">
+                  <div class="anchor-grid" role="radiogroup" aria-label="Posición del folio">
+                    <button type="button" data-pos="tl" aria-label="Arriba izquierda"></button>
+                    <button type="button" data-pos="tc" aria-label="Arriba centro"></button>
+                    <button type="button" data-pos="tr" aria-label="Arriba derecha"></button>
+                    <button type="button" data-pos="ml" aria-label="Centro izquierda"></button>
+                    <button type="button" data-pos="mc" aria-label="Centro"></button>
+                    <button type="button" data-pos="mr" aria-label="Centro derecha"></button>
+                    <button type="button" data-pos="bl" aria-label="Abajo izquierda"></button>
+                    <button type="button" data-pos="bc" aria-label="Abajo centro"></button>
+                    <button type="button" data-pos="br" aria-label="Abajo derecha"></button>
+                  </div>
+                  <div class="stack-4 grow" id="camposMargen">
+                    <label class="field">
+                      <span class="flabel">Margen Horizontal</span>
+                      <span class="suffix"><input type="number" min="0" max="50" step="0.1" data-cfg="margenX" /><i>cm</i></span>
+                    </label>
+                    <label class="field">
+                      <span class="flabel">Margen Vertical</span>
+                      <span class="suffix"><input type="number" min="0" max="50" step="0.1" data-cfg="margenY" /><i>cm</i></span>
+                    </label>
+                  </div>
+                  <div class="stack-4 grow" id="camposLibre" hidden>
+                    <label class="field">
+                      <span class="flabel">Horizontal</span>
+                      <span class="suffix"><input type="number" min="0" max="100" step="0.5" data-cfg="customX" /><i>%</i></span>
+                    </label>
+                    <label class="field">
+                      <span class="flabel">Vertical</span>
+                      <span class="suffix"><input type="number" min="0" max="100" step="0.5" data-cfg="customY" /><i>%</i></span>
+                    </label>
+                  </div>
+                </div>
+                <button type="button" class="pill-btn" data-pos="custom">
+                  <svg class="i"><use href="#i-crosshair" /></svg>
+                  <span>Posición libre · clic o arrastra en la vista previa</span>
                 </button>
-                <div class="fp-pop" id="fpPop" hidden>
-                  <input type="search" id="fpBuscar" placeholder="Buscar fuente (ej. Arial, Calibri…)" autocomplete="off" />
-                  <div class="fp-list" id="fpLista" role="listbox"></div>
-                  <div class="fp-actions">
-                    <button type="button" class="btn small" id="btnSubirFuente">＋ Subir .ttf/.otf</button>
-                    <button type="button" class="btn small" id="btnFuentesPC">🖥 Fuentes de mi PC</button>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="stack-4">
+                <label class="field">
+                  <span class="flabel">Rotación del Texto <span class="help" role="button" tabindex="0" data-ayuda="Gira el folio: horizontal, vertical (para ponerlo en el margen lateral) o invertido.">?</span></span>
+                  <span class="select">
+                    <select data-cfg="rotTexto" data-num="1">
+                      <option value="0">0° Horizontal</option>
+                      <option value="90">90° Vertical Ascendente</option>
+                      <option value="270">-90° Vertical Descendente</option>
+                      <option value="180">180° Invertido</option>
+                    </select>
+                    <svg class="i"><use href="#i-chevron-down" /></svg>
+                  </span>
+                </label>
+                <label class="check-card">
+                  <input type="checkbox" data-cfg="espejo" />
+                  <span class="check-box"><svg class="i"><use href="#i-check" /></svg></span>
+                  <span class="check-text">
+                    <b>Modo Espejo (Doble Cara)</b>
+                    <small>Alterna los márgenes izquierdo/derecho en páginas pares para encuadernación.</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <!-- ===== Diseño ===== -->
+            <div class="tabpanel" data-panel="diseno" role="tabpanel" hidden>
+              <div class="stack-3">
+                <span class="flabel">Estilo del Fondo <span class="help" role="button" tabindex="0" data-ayuda="Encierra el folio en un recuadro: rectángulo, redondeado o círculo, con borde y fondo de color.">?</span></span>
+                <div class="shape-grid">
+                  <button type="button" data-caja="ninguna"><svg class="i"><use href="#i-align-center" /></svg><span>Ninguno</span></button>
+                  <button type="button" data-caja="rect"><svg class="i"><use href="#i-square" /></svg><span>Rectángulo</span></button>
+                  <button type="button" data-caja="redondeado"><svg class="i"><use href="#i-rounded" /></svg><span>Redondeado</span></button>
+                  <button type="button" data-caja="elipse"><svg class="i"><use href="#i-circle" /></svg><span>Círculo</span></button>
+                </div>
+              </div>
+
+              <div class="shape-opts" id="opcionesCaja">
+                <div class="grid-2">
+                  <label class="field">
+                    <span class="flabel">Grosor Borde (pt) <span class="help" role="button" tabindex="0" data-ayuda="Grosor de la línea del recuadro. Pon 0 si solo quieres el fondo de color sin borde.">?</span></span>
+                    <input type="number" min="0" max="10" step="0.25" data-cfg="grosor" />
+                  </label>
+                  <label class="field">
+                    <span class="flabel">Espaciado (pt) <span class="help" role="button" tabindex="0" data-ayuda="Espacio entre el texto y el borde del recuadro.">?</span></span>
+                    <input type="number" min="0" max="30" step="1" data-cfg="relleno" />
+                  </label>
+                </div>
+                <div class="grid-2">
+                  <div class="field">
+                    <span class="flabel lh">Color del Borde</span>
+                    <label class="color-field">
+                      <input type="color" data-cfg="colorBorde" aria-label="Color del borde" />
+                      <span id="hexBorde"></span>
+                    </label>
+                  </div>
+                  <div class="field">
+                    <span class="flabel lh row-between">
+                      Color de Fondo
+                      <button type="button" class="toggle-link" id="btnFondo"></button>
+                    </span>
+                    <label class="color-field" id="campoFondo">
+                      <input type="color" data-cfg="colorFondo" aria-label="Color de fondo" />
+                      <span id="hexFondo"></span>
+                    </label>
                   </div>
                 </div>
               </div>
-              <input type="number" class="size" min="4" max="200" step="0.5" list="tamanos" data-cfg="tamano" title="Tamaño (pt)" aria-label="Tamaño de fuente" />
-              <datalist id="tamanos">
-                <option value="8"></option><option value="9"></option><option value="10"></option><option value="11"></option>
-                <option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option>
-                <option value="20"></option><option value="24"></option><option value="28"></option><option value="36"></option>
-                <option value="48"></option><option value="72"></option>
-              </datalist>
-            </div>
-            <div class="toolbar">
-              <div class="seg">
-                <button type="button" class="tbtn" data-toggle="negrita" title="Negrita"><b>N</b></button>
-                <button type="button" class="tbtn" data-toggle="cursiva" title="Cursiva"><i style="font-family: Georgia, serif">K</i></button>
-                <button type="button" class="tbtn" data-toggle="subrayado" title="Subrayado"><u>S</u></button>
-              </div>
-              <label class="color-btn" title="Color de fuente">
-                <span class="color-a">A</span>
-                <input type="color" data-cfg="color" />
-              </label>
-              <div class="seg" title="Alineación entre líneas">
-                <button type="button" class="tbtn" data-alinear="auto" title="Automática según la posición">Auto</button>
-                <button type="button" class="tbtn" data-alinear="izq" title="Izquierda">
-                  <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 5h18v2H3zm0 4h12v2H3zm0 4h18v2H3zm0 4h12v2H3z"/></svg>
-                </button>
-                <button type="button" class="tbtn" data-alinear="centro" title="Centrado">
-                  <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 5h18v2H3zm3 4h12v2H6zm-3 4h18v2H3zm3 4h12v2H6z"/></svg>
-                </button>
-                <button type="button" class="tbtn" data-alinear="der" title="Derecha">
-                  <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 5h18v2H3zm6 4h12v2H9zm-6 4h18v2H3zm6 4h12v2H9z"/></svg>
-                </button>
-              </div>
-            </div>
-            <div class="grid2">
-              <label class="field">
-                <span class="label">Opacidad <output id="outOpacidad"></output></span>
-                <input type="range" min="10" max="100" step="5" data-cfg="opacidad" />
-              </label>
-              <label class="field">
-                <span class="label">Interlineado</span>
-                <select data-cfg="interlineado" data-num="1">
-                  <option value="1">1,0</option>
-                  <option value="1.15">1,15</option>
-                  <option value="1.5">1,5</option>
-                  <option value="2">2,0</option>
-                </select>
-              </label>
-            </div>
-            <p class="hint" id="notaFuente"></p>
-          </div>
-
-          <!-- ===== Posición ===== -->
-          <div class="tabpanel" data-panel="pos" role="tabpanel" hidden>
-            <div class="pos-wrap">
-              <div class="pos-grid" id="posGrid" role="radiogroup" aria-label="Posición del folio">
-                <button type="button" data-pos="tl" title="Arriba izquierda"></button>
-                <button type="button" data-pos="tc" title="Arriba centro"></button>
-                <button type="button" data-pos="tr" title="Arriba derecha"></button>
-                <button type="button" data-pos="ml" title="Centro izquierda"></button>
-                <button type="button" data-pos="mc" title="Centro"></button>
-                <button type="button" data-pos="mr" title="Centro derecha"></button>
-                <button type="button" data-pos="bl" title="Abajo izquierda"></button>
-                <button type="button" data-pos="bc" title="Abajo centro"></button>
-                <button type="button" data-pos="br" title="Abajo derecha"></button>
-              </div>
-              <div class="pos-side">
-                <div id="camposMargen">
-                  <label class="field inline">
-                    <span class="label">Margen horiz.</span>
-                    <span class="unit"><input type="number" min="0" max="50" step="0.1" data-cfg="margenX" /><i>cm</i></span>
-                  </label>
-                  <label class="field inline">
-                    <span class="label">Margen vert.</span>
-                    <span class="unit"><input type="number" min="0" max="50" step="0.1" data-cfg="margenY" /><i>cm</i></span>
-                  </label>
-                </div>
-                <div id="camposLibre" hidden>
-                  <label class="field inline">
-                    <span class="label">Horizontal</span>
-                    <span class="unit"><input type="number" min="0" max="100" step="0.5" data-cfg="customX" /><i>%</i></span>
-                  </label>
-                  <label class="field inline">
-                    <span class="label">Vertical</span>
-                    <span class="unit"><input type="number" min="0" max="100" step="0.5" data-cfg="customY" /><i>%</i></span>
-                  </label>
-                </div>
-                <button type="button" class="btn small full" data-pos="custom">✥ Posición libre</button>
-              </div>
-            </div>
-            <p class="hint" id="hintPos"></p>
-            <div class="grid2">
-              <label class="field">
-                <span class="label">Rotación del texto</span>
-                <select data-cfg="rotTexto" data-num="1">
-                  <option value="0">0° horizontal</option>
-                  <option value="90">90° vertical ↑</option>
-                  <option value="270">270° vertical ↓</option>
-                  <option value="180">180° invertido</option>
-                </select>
-              </label>
-              <label class="field check">
-                <input type="checkbox" data-cfg="espejo" />
-                <span>Espejo en pares <small>(doble cara)</small></span>
-              </label>
-            </div>
-          </div>
-
-          <!-- ===== Recuadro ===== -->
-          <div class="tabpanel" data-panel="caja" role="tabpanel" hidden>
-            <div class="field">
-              <span class="label">Forma</span>
-              <div class="seg wide">
-                <button type="button" class="tbtn" data-caja="ninguna">Ninguno</button>
-                <button type="button" class="tbtn" data-caja="rect">Rectángulo</button>
-                <button type="button" class="tbtn" data-caja="redondeado">Redondeado</button>
-                <button type="button" class="tbtn" data-caja="elipse">Óvalo</button>
-              </div>
-            </div>
-            <div class="grid3">
-              <label class="field">
-                <span class="label">Borde (pt)</span>
-                <input type="number" min="0.25" max="10" step="0.25" data-cfg="grosor" />
-              </label>
-              <label class="field">
-                <span class="label">Color borde</span>
-                <input type="color" data-cfg="colorBorde" />
-              </label>
-              <label class="field">
-                <span class="label">Espacio (pt)</span>
-                <input type="number" min="0" max="30" step="1" data-cfg="relleno" />
-              </label>
-            </div>
-            <div class="grid2">
-              <label class="field check">
-                <input type="checkbox" data-cfg="fondo" />
-                <span>Fondo de color <small>(tapa lo de debajo)</small></span>
-              </label>
-              <label class="field">
-                <span class="label">Color de fondo</span>
-                <input type="color" data-cfg="colorFondo" />
-              </label>
             </div>
           </div>
         </section>
 
         <!-- Acción -->
-        <div class="actions">
-          <button id="btnFoliar" class="btn primary big" disabled>Foliar y generar PDF</button>
+        <section class="card action-card">
+          <button id="btnFoliar" class="btn-cta" disabled>
+            <span id="btnFoliarTxt">Foliar Documentos</span>
+            <span class="cta-arrow"><svg class="i"><use href="#i-arrow-right" /></svg></span>
+          </button>
           <div class="progress" id="progreso" hidden>
             <div class="bar"><div class="fill" id="progresoFill"></div></div>
             <div class="plabel" id="progresoTxt"></div>
           </div>
           <div class="result" id="resultado" hidden>
             <div class="result-info">
-              <span class="ok-dot"></span>
+              <span class="ok-dot"><svg class="i"><use href="#i-check" /></svg></span>
               <div>
                 <b id="resNombre"></b>
                 <small id="resDetalle"></small>
               </div>
             </div>
-            <div class="row">
-              <a class="btn primary" id="btnDescargar" download>⬇ Descargar</a>
-              <a class="btn" id="btnAbrir" target="_blank" rel="noopener">Abrir</a>
+            <div class="result-actions">
+              <a class="btn-primary" id="btnDescargar" download><svg class="i"><use href="#i-download" /></svg> Descargar</a>
+              <a class="btn-ghost" id="btnAbrir" target="_blank" rel="noopener"><svg class="i"><use href="#i-external" /></svg> Abrir</a>
             </div>
           </div>
-          <button type="button" class="link" id="btnReset">Restablecer ajustes</button>
-        </div>
+          <div class="action-foot">
+            <button type="button" class="reset-btn" id="btnReset">
+              <svg class="i"><use href="#i-refresh" /></svg> Valores por defecto
+            </button>
+            <span class="version">v2.4.0</span>
+          </div>
+        </section>
       </aside>
 
-      <!-- ============ VISTA PREVIA ============ -->
-      <section class="preview-col">
-        <div class="card preview">
-          <div class="preview-bar" id="barraVista" hidden>
-            <div class="nav">
-              <button type="button" class="icon-btn" id="btnPrev" title="Página anterior (←)">‹</button>
-              <span>Página <input type="number" id="inPagina" min="1" value="1" /> de <b id="totalPaginas">0</b></span>
-              <button type="button" class="icon-btn" id="btnNext" title="Página siguiente (→)">›</button>
-            </div>
+      <!-- ================= Vista previa ================= -->
+      <section class="preview">
+        <div class="preview-bar">
+          <div class="pb-title">
+            <span class="icon-chip"><svg class="i"><use href="#i-layout" /></svg></span>
+            <h3>Lienzo de Vista Previa</h3>
+          </div>
+          <div class="pb-nav" id="navPaginas" hidden>
+            <button type="button" class="zbtn" id="btnPrev" title="Página anterior (←)"><svg class="i"><use href="#i-chevron-left" /></svg></button>
+            <span class="pb-page">Pág. <input type="number" id="inPagina" min="1" value="1" aria-label="Página" /> de <b id="totalPaginas">0</b></span>
+            <button type="button" class="zbtn" id="btnNext" title="Página siguiente (→)"><svg class="i"><use href="#i-chevron-right" /></svg></button>
             <span class="badge" id="badgeFolio"></span>
           </div>
-          <div class="stage" id="stage">
-            <div class="dropzone" id="dropzone" tabindex="0" role="button">
-              <div class="dz-icon">📁</div>
-              <div class="dz-main">Haz clic aquí o arrastra tu PDF o Word</div>
-              <div class="dz-sub">.pdf · .docx — puedes seleccionar varios</div>
-              <div class="dz-foot">Verás aquí la vista previa de cómo quedará cada página</div>
-            </div>
-            <div class="canvas-wrap" id="canvasWrap" hidden>
-              <canvas id="lienzo"></canvas>
-              <div class="marker" id="marcador" hidden></div>
-            </div>
-            <div class="overlay" id="overlay" hidden>
-              <div class="spinner"></div>
-              <div id="overlayTxt">Cargando…</div>
-            </div>
+          <div class="zoom">
+            <button type="button" class="zbtn" id="btnZoomMenos" title="Alejar">-</button>
+            <button type="button" class="zval" id="zoomValor" title="Volver a 100%">100%</button>
+            <button type="button" class="zbtn" id="btnZoomMas" title="Acercar">+</button>
           </div>
-          <p class="hint center" id="hintVista" hidden>
-            Consejo: haz clic o arrastra sobre la página para colocar el folio donde quieras.
-          </p>
+        </div>
+
+        <div class="canvas-area" id="stage">
+          <div class="grid-bg" aria-hidden="true"></div>
+
+          <!-- Estado vacío -->
+          <div class="empty-page" id="vacio">
+            <div class="fake-lines" aria-hidden="true">
+              <div style="height: 16px; width: 75%"></div>
+              <div style="height: 8px; margin-top: 32px"></div>
+              <div style="height: 8px"></div>
+              <div style="height: 8px; width: 83%"></div>
+              <div class="block" style="height: 128px; margin-top: 24px"></div>
+              <div style="height: 8px; margin-top: 24px"></div>
+              <div style="height: 8px; width: 66%"></div>
+            </div>
+            <div class="cta" id="ctaVacio" role="button" tabindex="0">
+              <div class="cta-icon">
+                <span class="cta-glow"></span>
+                <span class="cta-box"><svg class="i"><use href="#i-upload" /></svg></span>
+              </div>
+              <h3>Esperando Documento</h3>
+              <p>Carga un archivo para visualizar la numeración en tiempo real.</p>
+              <span class="cta-pill"><svg class="i"><use href="#i-corner" /></svg> Usa el panel lateral izquierdo</span>
+            </div>
+            <div class="fake-folio" id="folioSimulado"></div>
+          </div>
+
+          <!-- Documento real -->
+          <div class="canvas-wrap" id="canvasWrap" hidden>
+            <canvas id="lienzo"></canvas>
+            <div class="marker" id="marcador" hidden></div>
+          </div>
+
+          <div class="overlay" id="overlay" hidden>
+            <div class="spinner"></div>
+            <div id="overlayTxt">Cargando…</div>
+          </div>
         </div>
       </section>
     </main>
-
-    <footer class="foot">Procesamiento 100% local · tus archivos no se suben a ningún servidor</footer>
 
     <input type="file" id="inputArchivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden />
     <input type="file" id="inputFuente" accept=".ttf,.otf,font/ttf,font/otf" hidden />

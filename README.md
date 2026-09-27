@@ -1,4 +1,4 @@
-# Foleo · Foliar PDF
+# Foleo Pro · Foliar PDF
 
 Herramienta web para **foliar (numerar) documentos PDF y Word** directamente en el navegador.
 Los archivos se procesan en tu equipo y no se suben a ningún servidor.
@@ -15,8 +15,9 @@ Los archivos se procesan en tu equipo y no se suben a ningún servidor.
 - Excluir páginas sueltas o rangos (`2, 5-7`).
 
 **Texto del folio**
-- Números arábigos o romanos (I, II… / i, ii…), con ceros a la izquierda (01, 001…).
-- Plantillas: `Folio {n}`, `Página {n} de {total}`, número en letras (`{letras}` → "veintiuno"), varias líneas.
+- Números arábigos, letras (A, B, C…) o romanos (I, II… / i, ii…), con ceros a la izquierda (01, 001…).
+- Plantillas: `Folio {n}`, `Pág. {n} de {total}`, número en letras (`{letras}` → "veintiuno"),
+  fecha (`{fecha}`), nombre del documento (`{doc}`) y varias líneas.
 
 **Fuente (como en Word)**
 - Más de 35 fuentes, incluidas equivalentes a Arial, Calibri, Cambria, Times New Roman y Courier New.
@@ -24,6 +25,7 @@ Los archivos se procesan en tu equipo y no se suben a ningún servidor.
 - Puedes subir tu propia fuente (.ttf/.otf) o usar las instaladas en tu PC (Chrome/Edge).
 
 **Posición**
+- Vista previa con zoom y navegación por páginas.
 - 9 posiciones predefinidas con márgenes en cm, o posición libre haciendo clic/arrastrando sobre la vista previa.
 - Rotación del texto (0°, 90°, 180°, 270°) y modo espejo para impresión a doble cara.
 - Respeta páginas rotadas y recortadas.
@@ -37,6 +39,9 @@ Los archivos se procesan en tu equipo y no se suben a ningún servidor.
 
 > Los .docx se convierten a PDF dentro del navegador como imágenes. Para máxima calidad y texto
 > seleccionable, exporta primero el Word a PDF (Archivo › Guardar como › PDF).
+
+**Interfaz**
+- Tema claro y oscuro, ayuda (?) en cada opción y diseño adaptado a laptops de 1366×768 y a móviles.
 
 ## Tecnología
 

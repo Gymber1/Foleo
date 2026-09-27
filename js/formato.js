@@ -66,6 +66,18 @@ window.Formato = (() => {
     return s;
   }
 
+  // 1 -> A, 26 -> Z, 27 -> AA (como las columnas de Excel)
+  function alfabetico(n) {
+    if (n <= 0) return String(n);
+    let s = "";
+    while (n > 0) {
+      const r = (n - 1) % 26;
+      s = String.fromCharCode(65 + r) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+
   // "2, 5-7, 10" -> Set{2,5,6,7,10} (páginas 1-based, limitadas a [1, max])
   function parseRangos(texto, max) {
     const set = new Set();
@@ -81,5 +93,5 @@ window.Formato = (() => {
     return set;
   }
 
-  return { aLetras, romano, parseRangos };
+  return { aLetras, romano, alfabetico, parseRangos };
 })();

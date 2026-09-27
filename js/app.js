@@ -7,6 +7,7 @@
 
   const $ = (id) => document.getElementById(id);
   const CM = 72 / 2.54; // puntos por centímetro
+  const A4_ANCHO = 595.28; // para la página simulada
   const CLAVE = "foleo.ajustes.v1";
 
   const DEFAULTS = {
@@ -38,10 +39,10 @@
     espejo: false,
     caja: "ninguna",
     grosor: 1,
-    colorBorde: "#000000",
+    colorBorde: "#6366f1",
     fondo: false,
     colorFondo: "#ffffff",
-    relleno: 4,
+    relleno: 6,
   };
 
   let cfg = cargarAjustes();
@@ -53,6 +54,8 @@
   let paginaActual = 0;
   let resultadoUrl = null;
   let ocupado = false;
+  let zoom = 1;
+  const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.25, 1.5, 2, 2.5, 3];
 
   // Fuentes del usuario (subidas o del sistema)
   const fuentesUsuario = [];
@@ -105,10 +108,17 @@
   }
 
   function formatearNumero(n) {
-    if (cfg.estilo === "romano-may") return Formato.romano(n);
-    if (cfg.estilo === "romano-min") return Formato.romano(n).toLowerCase();
-    return String(n).padStart(Math.round(num(cfg.digitos, 1, 1, 8)), "0");
+    switch (cfg.estilo) {
+      case "romano-may": return Formato.romano(n);
+      case "romano-min": return Formato.romano(n).toLowerCase();
+      case "alfa-may": return Formato.alfabetico(n);
+      case "alfa-min": return Formato.alfabetico(n).toLowerCase();
+      default: return String(n).padStart(Math.round(num(cfg.digitos, 1, 1, 8)), "0");
+    }
   }
+
+  const hoy = () => new Date().toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const nombreDoc = () => (archivos[0] ? archivos[0].nombre.replace(/\.(pdf|docx)$/i, "") : "documento");
 
   function textoFolio(n, plan, idx) {
     let letras = Formato.aLetras(n);
@@ -119,6 +129,8 @@
       letras,
       total: formatearNumero(Math.max(plan.ultimo, plan.primero)),
       pag: String(idx + 1),
+      fecha: hoy(),
+      doc: nombreDoc(),
     };
     const lineas = String(cfg.plantilla || "")
       .replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m))
@@ -172,7 +184,7 @@
       });
     } else if (def.sistema) {
       const orden = { n: ["n"], b: ["b", "n"], i: ["i", "n"], bi: ["bi", "b", "i", "n"] }[variante];
-      let elegida = orden.find((k) => def.variantes[k]) || Object.keys(def.variantes)[0];
+      const elegida = orden.find((k) => def.variantes[k]) || Object.keys(def.variantes)[0];
       falsaNegrita = b && !elegida.includes("b");
       falsaCursiva = i && !elegida.includes("i");
       const fd = def.variantes[elegida];
@@ -209,8 +221,8 @@
     const ch = asc + desc + (lineas.length - 1) * salto;
 
     const caja = cfg.caja;
-    const hayCaja = caja !== "ninguna" || cfg.fondo;
-    const pad = hayCaja ? num(cfg.relleno, 4, 0, 50) : 0;
+    const hayCaja = caja !== "ninguna";
+    const pad = hayCaja ? num(cfg.relleno, 6, 0, 50) : 0;
     const k = caja === "elipse" ? Math.SQRT2 : 1;
     const W = cw * k + 2 * pad;
     const H = ch * k + 2 * pad;
@@ -274,14 +286,13 @@
 
     const op = num(cfg.opacidad, 100, 5, 100) / 100;
     const color = hexRgb(cfg.color);
-    const grosor = num(cfg.grosor, 1, 0.1, 20);
-    const conBorde = caja !== "ninguna";
+    const grosor = num(cfg.grosor, 1, 0, 20);
 
     // Recuadro / fondo
-    if (hayCaja) {
+    if (hayCaja && (cfg.fondo || grosor > 0)) {
       const estilo = { opacity: op, borderOpacity: op };
       if (cfg.fondo) estilo.color = hexRgb(cfg.colorFondo);
-      if (conBorde) {
+      if (grosor > 0) {
         estilo.borderColor = hexRgb(cfg.colorBorde);
         estilo.borderWidth = grosor;
       }
@@ -342,7 +353,8 @@
   // ---------------------------------------------------------------------------
   // Archivos
   // ---------------------------------------------------------------------------
-  const esDocx = (f) => /\.docx$/i.test(f.name) || f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const esDocx = (f) =>
+    /\.docx$/i.test(f.name) || f.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   const esPdf = (f) => /\.pdf$/i.test(f.name) || f.type === "application/pdf";
 
   async function cargarPdf(bytes) {
@@ -357,10 +369,10 @@
   async function agregarArchivos(lista) {
     const todos = [...lista];
     const validos = todos.filter((f) => esPdf(f) || esDocx(f));
-    if (todos.some((f) => /\.doc$/i.test(f.name)))
-      aviso("Los archivos .doc antiguos no son compatibles. Guárdalo como .docx o PDF desde Word.", "warn");
+    const hayDoc = todos.some((f) => /\.doc$/i.test(f.name));
+    if (hayDoc) aviso("Los archivos .doc antiguos no son compatibles. Guárdalo como .docx o PDF desde Word.", "warn");
     if (!validos.length) {
-      if (!todos.some((f) => /\.doc$/i.test(f.name))) aviso("Solo se aceptan archivos PDF o Word (.docx).", "err");
+      if (!hayDoc) aviso("Solo se aceptan archivos PDF o Word (.docx).", "err");
       return;
     }
     ocultarResultado();
@@ -418,6 +430,15 @@
     await actualizarVista();
   }
 
+  const icono = (nombre) => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "i");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", `#i-${nombre}`);
+    svg.append(use);
+    return svg;
+  };
+
   function pintarArchivos() {
     const ul = $("listaArchivos");
     ul.innerHTML = "";
@@ -425,7 +446,7 @@
       const li = document.createElement("li");
       const tag = document.createElement("span");
       tag.className = `ftag ${a.tipo}`;
-      tag.textContent = a.tipo === "docx" ? "W" : "PDF";
+      tag.textContent = a.tipo === "docx" ? "DOCX" : "PDF";
       const nombre = document.createElement("span");
       nombre.className = "fname";
       nombre.textContent = a.nombre;
@@ -435,26 +456,26 @@
       meta.textContent = `${a.paginas} pág.`;
       li.append(tag, nombre, meta);
       const botones = [
-        ["↑", "Subir", i === 0, () => mover(i, -1)],
-        ["↓", "Bajar", i === archivos.length - 1, () => mover(i, 1)],
-        ["✕", "Quitar", false, () => quitar(i)],
+        ["arrow-up", "Subir", i === 0, () => mover(i, -1)],
+        ["arrow-down", "Bajar", i === archivos.length - 1, () => mover(i, 1)],
+        ["x", "Quitar", false, () => quitar(i)],
       ];
-      for (const [txt, titulo, desactivado, fn] of botones) {
-        if (archivos.length === 1 && txt !== "✕") continue;
+      for (const [ic, titulo, desactivado, fn] of botones) {
+        if (archivos.length === 1 && ic !== "x") continue;
         const b = document.createElement("button");
         b.type = "button";
         b.className = "mini";
-        b.textContent = txt;
         b.title = titulo;
+        b.setAttribute("aria-label", titulo);
         b.disabled = desactivado;
+        b.append(icono(ic));
         b.addEventListener("click", fn);
         li.append(b);
       }
       ul.append(li);
     });
     $("btnQuitarTodo").hidden = archivos.length < 2;
-    $("btnAgregar").textContent = archivos.length ? "＋ Agregar más" : "＋ Agregar PDF o Word";
-    $("hintArchivos").hidden = archivos.length > 0;
+    document.querySelector(".upload-card").classList.toggle("con-archivos", archivos.length > 0);
   }
 
   function mover(i, d) {
@@ -482,10 +503,9 @@
   async function actualizarVista() {
     const turno = ++turnoVista;
     const hayDoc = !!srcDoc;
-    $("dropzone").hidden = hayDoc;
+    $("vacio").hidden = hayDoc;
     $("canvasWrap").hidden = !hayDoc;
-    $("barraVista").hidden = !hayDoc;
-    $("hintVista").hidden = !hayDoc;
+    $("navPaginas").hidden = !hayDoc;
     if (!hayDoc) {
       cargando(false);
       return;
@@ -495,7 +515,8 @@
     const n = plan.mapa.get(paginaActual);
     const badge = $("badgeFolio");
     badge.className = n === undefined ? "badge off" : "badge";
-    badge.textContent = n === undefined ? "Sin folio" : `Folio: ${textoFolio(n, plan, paginaActual).join(" ")}`;
+    badge.textContent = n === undefined ? "Sin folio" : textoFolio(n, plan, paginaActual).join(" ");
+    badge.title = badge.textContent;
     $("inPagina").value = paginaActual + 1;
     $("inPagina").max = numPaginas;
     $("totalPaginas").textContent = numPaginas;
@@ -514,16 +535,17 @@
       const bytes = await doc.save();
       if (turno !== turnoVista) return;
 
-      const tarea = pdfjsLib.getDocument({ data: bytes });
-      const pdf = await tarea.promise;
+      const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
       const p = await pdf.getPage(1);
       const base = p.getViewport({ scale: 1 });
       const stage = $("stage");
-      const anchoDisp = stage.clientWidth - 36;
-      const altoDisp = window.innerWidth > 900 ? window.innerHeight - 190 : window.innerHeight * 0.7;
-      const escala = Math.max(0.1, Math.min(anchoDisp / base.width, altoDisp / base.height));
+      const grande = window.matchMedia("(min-width: 1024px)").matches;
+      const anchoDisp = stage.clientWidth - 64;
+      const altoDisp = grande ? stage.clientHeight - 64 : window.innerHeight * 0.8 - 120;
+      const ajuste = Math.max(0.1, Math.min(anchoDisp / base.width, altoDisp / base.height));
+      const escala = ajuste * zoom;
       const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-      const vp = p.getViewport({ scale: escala * dpr });
+      const vp = p.getViewport({ scale: Math.min(escala * dpr, 8) });
       const tmp = document.createElement("canvas");
       tmp.width = Math.floor(vp.width);
       tmp.height = Math.floor(vp.height);
@@ -534,8 +556,8 @@
       const lienzo = $("lienzo");
       lienzo.width = tmp.width;
       lienzo.height = tmp.height;
-      lienzo.style.width = `${tmp.width / dpr}px`;
-      lienzo.style.height = `${tmp.height / dpr}px`;
+      lienzo.style.width = `${base.width * escala}px`;
+      lienzo.style.height = `${base.height * escala}px`;
       lienzo.getContext("2d").drawImage(tmp, 0, 0);
       pintarMarcador();
     } catch (e) {
@@ -577,6 +599,20 @@
     actualizarVista();
   }
 
+  function cambiarZoom(dir) {
+    if (dir === 0) zoom = 1;
+    else {
+      let i = ZOOMS.findIndex((z) => z >= zoom - 1e-6);
+      if (i < 0) i = ZOOMS.length - 1;
+      i = Math.max(0, Math.min(ZOOMS.length - 1, i + dir));
+      zoom = ZOOMS[i];
+    }
+    $("zoomValor").textContent = `${Math.round(zoom * 100)}%`;
+    $("btnZoomMenos").disabled = zoom <= ZOOMS[0];
+    $("btnZoomMas").disabled = zoom >= ZOOMS[ZOOMS.length - 1];
+    if (srcDoc) actualizarVista();
+  }
+
   // Clic / arrastre sobre la página para colocar el folio
   function configurarArrastre() {
     const lienzo = $("lienzo");
@@ -606,6 +642,68 @@
     lienzo.addEventListener("pointercancel", fin);
   }
 
+  // Folio simulado sobre la página vacía (sin documento cargado)
+  function pintarFolioSimulado() {
+    const el = $("folioSimulado");
+    const lineas = textoFolio(Math.round(num(cfg.inicio, 1, 0)), { primero: 1, ultimo: 20 }, 0);
+    el.textContent = lineas.join("\n");
+    el.hidden = !lineas.length;
+    const u = (pt) => `${(pt / A4_ANCHO) * 100}cqw`; // puntos -> ancho de la página simulada
+    const def = buscarFuente(cfg.fuente);
+    const caja = cfg.caja;
+    const hayCaja = caja !== "ninguna";
+    const grosor = num(cfg.grosor, 1, 0, 20);
+    Object.assign(el.style, {
+      fontFamily: def.css,
+      fontSize: u(num(cfg.tamano, 12, 4, 200)),
+      fontWeight: cfg.negrita ? "700" : "400",
+      fontStyle: cfg.cursiva ? "italic" : "normal",
+      textDecoration: cfg.subrayado ? "underline" : "none",
+      color: cfg.color,
+      opacity: num(cfg.opacidad, 100) / 100,
+      lineHeight: String(num(cfg.interlineado, 1.15)),
+      padding: hayCaja ? u(num(cfg.relleno, 6, 0, 50) * (caja === "elipse" ? 1.6 : 1)) : "0",
+      border: hayCaja && grosor > 0 ? `${u(grosor)} solid ${cfg.colorBorde}` : "none",
+      borderRadius: caja === "redondeado" ? "0.6em" : caja === "elipse" ? "50%" : "0",
+      background: hayCaja && cfg.fondo ? cfg.colorFondo : "transparent",
+      top: "auto",
+      bottom: "auto",
+      left: "auto",
+      right: "auto",
+    });
+    let alin = cfg.alineacion;
+    const tr = num(cfg.rotTexto, 0);
+    const giro = tr ? ` rotate(${-tr}deg)` : "";
+    if (cfg.posicion === "custom") {
+      el.style.left = `${num(cfg.customX, 50, 0, 100)}%`;
+      el.style.top = `${num(cfg.customY, 50, 0, 100)}%`;
+      el.style.transform = `translate(-50%, -50%)${giro}`;
+      if (alin === "auto") alin = "centro";
+    } else {
+      const [v, h] = cfg.posicion;
+      const mx = u(num(cfg.margenX, 1, 0) * CM);
+      const my = u(num(cfg.margenY, 1, 0) * CM);
+      let tx = "0";
+      let ty = "0";
+      if (h === "l") el.style.left = mx;
+      else if (h === "r") el.style.right = mx;
+      else {
+        el.style.left = "50%";
+        tx = "-50%";
+      }
+      if (v === "t") el.style.top = my;
+      else if (v === "b") el.style.bottom = my;
+      else {
+        el.style.top = "50%";
+        ty = "-50%";
+      }
+      el.style.transform = `translate(${tx}, ${ty})${giro}`;
+      if (alin === "auto") alin = h === "l" ? "izq" : h === "r" ? "der" : "centro";
+    }
+    el.style.transformOrigin = "center";
+    el.style.textAlign = { izq: "left", der: "right", centro: "center" }[alin];
+  }
+
   // ---------------------------------------------------------------------------
   // Generar el PDF final
   // ---------------------------------------------------------------------------
@@ -620,8 +718,7 @@
     $("progreso").hidden = false;
     progreso(0, "Preparando…");
     try {
-      const doc =
-        archivos.length === 1 ? (await cargarPdf(archivos[0].bytes)).doc : await unirDocumentos();
+      const doc = archivos.length === 1 ? (await cargarPdf(archivos[0].bytes)).doc : await unirDocumentos();
       const total = doc.getPageCount();
       const plan = planFoliado(total);
       if (!plan.cantidad) throw new Error("Con estos ajustes no hay ninguna página para foliar.");
@@ -642,8 +739,7 @@
       const blob = new Blob([bytes], { type: "application/pdf" });
       resultadoUrl = URL.createObjectURL(blob);
 
-      const base = archivos[0].nombre.replace(/\.(pdf|docx)$/i, "");
-      const nombre = `${base}${archivos.length > 1 ? "_unido" : ""}_foliado.pdf`;
+      const nombre = `${nombreDoc()}${archivos.length > 1 ? "_unido" : ""}_foliado.pdf`;
       $("btnDescargar").href = resultadoUrl;
       $("btnDescargar").download = nombre;
       $("btnAbrir").href = resultadoUrl;
@@ -653,6 +749,7 @@
         `${plan.cantidad} de ${total} páginas foliadas (${formatearNumero(a)} → ${formatearNumero(b)}) · ${tamanoLegible(blob.size)}`;
       progreso(100, "¡Listo!");
       $("resultado").hidden = false;
+      $("resultado").scrollIntoView({ block: "nearest", behavior: "smooth" });
       setTimeout(() => ($("progreso").hidden = true), 600);
     } catch (e) {
       console.error(e);
@@ -660,7 +757,7 @@
       aviso(mensajeError(e), "err", 8000);
     } finally {
       ocupado = false;
-      boton.disabled = !archivos.length;
+      actualizarBoton();
     }
   }
 
@@ -702,40 +799,55 @@
     });
   }
 
-  function cambio(soloVista = false) {
+  function cambio(soloPosicion = false) {
     guardarAjustes();
     ocultarResultado();
-    actualizarUI(soloVista);
+    actualizarUI(soloPosicion);
     programarVista();
   }
 
-  function actualizarUI(soloVista = false) {
-    if (!soloVista) escribirControles();
+  function actualizarBoton() {
+    const plan = numPaginas ? planFoliado(numPaginas) : null;
+    $("btnFoliar").disabled = !archivos.length || ocupado || (plan && !plan.cantidad);
+    $("btnFoliarTxt").textContent =
+      plan && plan.cantidad ? `Foliar ${plan.cantidad} ${plan.cantidad === 1 ? "Página" : "Páginas"}` : "Foliar Documentos";
+  }
+
+  function actualizarUI(soloPosicion = false) {
+    if (!soloPosicion) escribirControles();
     else {
-      // Solo refrescar los campos de posición libre durante el arrastre
-      document.querySelectorAll('[data-cfg="customX"],[data-cfg="customY"]').forEach((el) => (el.value = cfg[el.dataset.cfg]));
+      // Durante el arrastre solo se refrescan los campos de posición libre
+      document
+        .querySelectorAll('[data-cfg="customX"],[data-cfg="customY"]')
+        .forEach((el) => (el.value = cfg[el.dataset.cfg]));
     }
 
-    document.querySelectorAll("[data-toggle]").forEach((b) => {
-      const on = !!cfg[b.dataset.toggle];
-      b.classList.toggle("on", on);
-      b.setAttribute("aria-pressed", on);
-    });
-    document.querySelectorAll("[data-alinear]").forEach((b) => b.classList.toggle("on", b.dataset.alinear === cfg.alineacion));
-    document.querySelectorAll("[data-caja]").forEach((b) => b.classList.toggle("on", b.dataset.caja === cfg.caja));
-    document.querySelectorAll("[data-pos]").forEach((b) => {
-      const on = b.dataset.pos === cfg.posicion;
-      b.classList.toggle("on", on);
-      b.setAttribute("aria-checked", on);
-    });
+    const marcar = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.classList.toggle("on", fn(b)));
+    marcar("[data-toggle]", (b) => !!cfg[b.dataset.toggle]);
+    marcar("[data-alinear]", (b) => b.dataset.alinear === cfg.alineacion);
+    marcar("[data-caja]", (b) => b.dataset.caja === cfg.caja);
+    marcar("[data-pos]", (b) => b.dataset.pos === cfg.posicion);
+
     const libre = cfg.posicion === "custom";
     $("camposLibre").hidden = !libre;
     $("camposMargen").hidden = libre;
-    $("hintPos").textContent = libre
-      ? "Haz clic o arrastra sobre la vista previa para mover el folio."
-      : "Elige una de las 9 posiciones o usa la posición libre para colocarlo donde quieras.";
     document.querySelector(".color-a").style.setProperty("--swatch", cfg.color);
     $("outOpacidad").textContent = `${num(cfg.opacidad, 100)}%`;
+
+    // Diseño
+    $("opcionesCaja").classList.toggle("off", cfg.caja === "ninguna");
+    $("hexBorde").textContent = String(cfg.colorBorde).toUpperCase();
+    $("hexFondo").textContent = String(cfg.colorFondo).toUpperCase();
+    $("btnFondo").textContent = cfg.fondo ? "Activado" : "Desactivado";
+    $("btnFondo").classList.toggle("on", !!cfg.fondo);
+    $("campoFondo").classList.toggle("off", !cfg.fondo);
+    document.querySelector('[data-cfg="colorFondo"]').disabled = !cfg.fondo;
+
+    // Orden
+    $("infoOrden").textContent =
+      cfg.orden === "inverso"
+        ? "Comienza en la última página del documento y cuenta regresivamente hacia la primera."
+        : "Comienza en la primera página del documento y cuenta progresivamente hacia la última.";
 
     // Fuente seleccionada
     const def = buscarFuente(cfg.fuente);
@@ -743,13 +855,10 @@
     const lab = $("fpLabel");
     lab.textContent = def.nombre;
     lab.style.fontFamily = def.css;
-    lab.style.fontWeight = cfg.negrita ? "700" : "400";
-    lab.style.fontStyle = cfg.cursiva ? "italic" : "normal";
-    let nota = "";
+    let nota = "Con los ajustes actuales";
     if (def.web && ((cfg.negrita && !def.negrita) || (cfg.cursiva && !def.cursiva)))
-      nota = `${def.nombre} no tiene ${cfg.negrita && !def.negrita ? "negrita" : "cursiva"} propia; se simula.`;
-    else if (def.subida && (cfg.negrita || cfg.cursiva)) nota = "En fuentes subidas la negrita y cursiva se simulan.";
-    else if (def.web) nota = "Se descarga una sola vez y se incrusta en el PDF.";
+      nota = `${def.nombre} no tiene ${cfg.negrita && !def.negrita ? "negrita" : "cursiva"} propia; se simula`;
+    else if (def.subida && (cfg.negrita || cfg.cursiva)) nota = "Negrita/cursiva simuladas en fuentes subidas";
     $("notaFuente").textContent = nota;
 
     // Resumen del plan
@@ -758,38 +867,41 @@
     $("inDesde").max = total || "";
     $("inHasta").max = total || "";
     if (!total) {
-      res.className = "summary";
-      res.textContent =
-        cfg.orden === "inverso"
-          ? "La última página llevará el número inicial y se contará hacia atrás hasta la primera."
-          : "La primera página llevará el número inicial y se contará hacia adelante.";
+      res.className = "plan";
+      res.textContent = "";
     } else {
       const plan = planFoliado(total);
       if (!plan.cantidad) {
-        res.className = "summary warn";
+        res.className = "plan warn";
         res.textContent = "Con estos ajustes no se foliará ninguna página.";
       } else {
-        res.className = "summary";
+        res.className = "plan";
         const [ini, fin] = cfg.orden === "inverso" ? [plan.ultimo, plan.primero] : [plan.primero, plan.ultimo];
         res.textContent =
-          `Se foliarán ${plan.cantidad} de ${total} páginas (de la pág. ${plan.desde} a la ${plan.hasta}). ` +
-          `La pág. ${plan.desde} lleva el folio ${formatearNumero(ini)} y la última foliada el ${formatearNumero(fin)}.`;
+          `Se foliarán ${plan.cantidad} de ${total} páginas (pág. ${plan.desde} a ${plan.hasta}): ` +
+          `la pág. ${plan.desde} lleva el folio ${formatearNumero(ini)} y la última foliada el ${formatearNumero(fin)}.`;
       }
     }
 
-    // Ejemplo del texto
-    const planEj = total ? planFoliado(total) : { primero: num(cfg.inicio, 1), ultimo: num(cfg.inicio, 1) + 19 };
-    const nEj = Math.round(num(cfg.inicio, 1, 0));
-    $("ejemplo").textContent = textoFolio(nEj, planEj, 0).join("\n") || "(vacío)";
+    // Vista previa de la fuente
+    const planEj = total ? planFoliado(total) : { primero: 1, ultimo: 20 };
+    const ej = $("ejemplo");
+    ej.textContent = textoFolio(Math.round(num(cfg.inicio, 1, 0)), planEj, 0).join("\n") || "—";
+    Object.assign(ej.style, {
+      fontFamily: def.css,
+      fontWeight: cfg.negrita ? "700" : "500",
+      fontStyle: cfg.cursiva ? "italic" : "normal",
+      textDecoration: cfg.subrayado ? "underline" : "none",
+    });
 
-    const plan = total ? planFoliado(total) : null;
-    $("btnFoliar").disabled = !archivos.length || ocupado || (plan && !plan.cantidad);
-    $("btnFoliar").textContent = plan && plan.cantidad ? `Foliar ${plan.cantidad} páginas y generar PDF` : "Foliar y generar PDF";
+    pintarFolioSimulado();
+    actualizarBoton();
   }
 
   function enlazarControles() {
     document.querySelectorAll("[data-cfg]").forEach((el) => {
-      const ev = el.tagName === "SELECT" || el.type === "radio" || el.type === "checkbox" || el.type === "color" ? "change" : "input";
+      const ev =
+        el.tagName === "SELECT" || el.type === "radio" || el.type === "checkbox" || el.type === "color" ? "change" : "input";
       el.addEventListener(ev, () => {
         if (el.type === "radio" && !el.checked) return;
         cfg[el.dataset.cfg] = leerControl(el);
@@ -802,53 +914,68 @@
         });
       }
     });
-    document.querySelectorAll("[data-toggle]").forEach((b) =>
-      b.addEventListener("click", () => {
-        cfg[b.dataset.toggle] = !cfg[b.dataset.toggle];
-        cambio();
-      })
-    );
-    document.querySelectorAll("[data-alinear]").forEach((b) =>
-      b.addEventListener("click", () => {
-        cfg.alineacion = b.dataset.alinear;
-        cambio();
-      })
-    );
-    document.querySelectorAll("[data-caja]").forEach((b) =>
-      b.addEventListener("click", () => {
-        cfg.caja = b.dataset.caja;
-        cambio();
-      })
-    );
-    document.querySelectorAll("[data-pos]").forEach((b) =>
-      b.addEventListener("click", () => {
-        cfg.posicion = b.dataset.pos;
-        cambio();
-      })
-    );
-    $("selPlantilla").addEventListener("change", (e) => {
-      if (!e.target.value) return;
-      cfg.plantilla = e.target.value;
-      e.target.value = "";
+    const clic = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.addEventListener("click", () => fn(b)));
+    clic("[data-toggle]", (b) => {
+      cfg[b.dataset.toggle] = !cfg[b.dataset.toggle];
       cambio();
     });
-    document.querySelectorAll("[data-ins]").forEach((b) =>
-      b.addEventListener("click", () => {
-        const ta = $("inPlantilla");
-        const ins = b.dataset.ins;
-        const i = ta.selectionStart ?? ta.value.length;
-        const j = ta.selectionEnd ?? ta.value.length;
-        ta.value = ta.value.slice(0, i) + ins + ta.value.slice(j);
-        ta.focus();
-        ta.setSelectionRange(i + ins.length, i + ins.length);
-        cfg.plantilla = ta.value;
-        cambio();
-      })
-    );
+    clic("[data-alinear]", (b) => {
+      cfg.alineacion = b.dataset.alinear;
+      cambio();
+    });
+    clic("[data-caja]", (b) => {
+      cfg.caja = b.dataset.caja;
+      cambio();
+    });
+    clic("[data-pos]", (b) => {
+      cfg.posicion = b.dataset.pos;
+      cambio();
+    });
+    $("btnFondo").addEventListener("click", () => {
+      cfg.fondo = !cfg.fondo;
+      cambio();
+    });
+
+    // Plantillas
+    const menu = $("menuPlantillas");
+    const btnMenu = $("btnPlantillas");
+    const cerrarMenu = () => {
+      menu.hidden = true;
+      btnMenu.setAttribute("aria-expanded", "false");
+    };
+    btnMenu.addEventListener("click", () => {
+      menu.hidden = !menu.hidden;
+      btnMenu.setAttribute("aria-expanded", String(!menu.hidden));
+      if (!menu.hidden) flotar(menu, btnMenu, "der");
+    });
+    const reubicarMenu = () => !menu.hidden && flotar(menu, btnMenu, "der");
+    window.addEventListener("resize", reubicarMenu);
+    document.addEventListener("scroll", reubicarMenu, true);
+    clic("[data-plantilla]", (b) => {
+      cfg.plantilla = b.dataset.plantilla;
+      cerrarMenu();
+      cambio();
+    });
+    document.addEventListener("pointerdown", (e) => {
+      if (!menu.hidden && !menu.contains(e.target) && !btnMenu.contains(e.target)) cerrarMenu();
+    });
+
+    clic("[data-ins]", (b) => {
+      const ta = $("inPlantilla");
+      const ins = b.dataset.ins;
+      const i = ta.selectionStart ?? ta.value.length;
+      const j = ta.selectionEnd ?? ta.value.length;
+      ta.value = ta.value.slice(0, i) + ins + ta.value.slice(j);
+      ta.focus();
+      ta.setSelectionRange(i + ins.length, i + ins.length);
+      cfg.plantilla = ta.value;
+      cambio();
+    });
+
     $("btnReset").addEventListener("click", () => {
       cfg = { ...DEFAULTS };
       cambio();
-      aviso("Ajustes restablecidos.", "ok");
+      aviso("Ajustes restablecidos a los valores por defecto.", "ok");
     });
   }
 
@@ -867,7 +994,8 @@
       Fuentes.lista.forEach(Fuentes.cargarCss);
       buscar.value = "";
       pintar();
-      buscar.focus();
+      flotar(pop, btn);
+      buscar.focus({ preventScroll: true });
       const sel = listaEl.querySelector(".sel");
       if (sel) sel.scrollIntoView({ block: "center" });
     };
@@ -879,16 +1007,13 @@
     function pintar() {
       const q = buscar.value.trim().toLowerCase();
       listaEl.innerHTML = "";
-      const todas = [...Fuentes.lista, ...fuentesUsuario];
       const grupos = {};
-      for (const f of todas) {
-        const texto = `${f.nombre} ${f.nota || ""}`.toLowerCase();
-        if (q && !texto.includes(q)) continue;
+      for (const f of [...Fuentes.lista, ...fuentesUsuario]) {
+        if (q && !`${f.nombre} ${f.nota || ""}`.toLowerCase().includes(q)) continue;
         (grupos[f.grupo] = grupos[f.grupo] || []).push(f);
       }
-      const ordenGrupos = ["mias", "std", "word", "sans", "serif", "mono", "deco"];
       let hay = false;
-      for (const g of ordenGrupos) {
+      for (const g of ["mias", "std", "word", "sans", "serif", "mono", "deco"]) {
         if (!grupos[g]) continue;
         hay = true;
         const h = document.createElement("div");
@@ -917,14 +1042,19 @@
       }
       if (!hay) {
         const v = document.createElement("div");
-        v.className = "hint";
-        v.style.padding = "8px";
+        v.className = "fp-empty";
         v.textContent = "No se encontró esa fuente. Puedes subirla o usar las de tu PC.";
         listaEl.append(v);
       }
     }
 
     btn.addEventListener("click", () => (pop.hidden ? abrir() : cerrar()));
+    const reubicar = (e) => {
+      if (pop.hidden || (e && e.target instanceof Node && pop.contains(e.target))) return;
+      flotar(pop, btn);
+    };
+    window.addEventListener("resize", reubicar);
+    document.addEventListener("scroll", reubicar, true);
     buscar.addEventListener("input", pintar);
     buscar.addEventListener("keydown", (e) => {
       if (e.key === "Escape") cerrar();
@@ -934,7 +1064,7 @@
       }
     });
     document.addEventListener("pointerdown", (e) => {
-      if (!pop.hidden && !$("fontpicker").contains(e.target)) cerrar();
+      if (!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target)) cerrar();
     });
 
     // Subir una fuente propia
@@ -1019,6 +1149,24 @@
   // ---------------------------------------------------------------------------
   // Utilidades de interfaz
   // ---------------------------------------------------------------------------
+  // Coloca un menú flotante junto a su botón, dentro de la ventana y sin recortarse en el panel
+  function flotar(pop, ancla, alinear = "izq") {
+    // Se mueve al <body>: dentro de las tarjetas (backdrop-filter) un "fixed" quedaría recortado
+    if (pop.parentElement !== document.body) document.body.append(pop);
+    pop.classList.add("flotante");
+    const r = ancla.getBoundingClientRect();
+    const m = 8;
+    const w = pop.offsetWidth;
+    const h = pop.offsetHeight;
+    let x = alinear === "der" ? r.right - w : r.left;
+    x = Math.max(m, Math.min(window.innerWidth - w - m, x));
+    let y = r.bottom + 6;
+    if (y + h > window.innerHeight - m && r.top - 6 - h > m) y = r.top - 6 - h;
+    y = Math.max(m, Math.min(window.innerHeight - h - m, y));
+    pop.style.left = `${x}px`;
+    pop.style.top = `${y}px`;
+  }
+
   function aviso(texto, tipo = "info", ms = 4500) {
     const t = document.createElement("div");
     t.className = `toast ${tipo}`;
@@ -1035,8 +1183,15 @@
   function configurarArchivos() {
     const input = $("inputArchivo");
     const abrir = () => input.click();
-    $("dropzone").addEventListener("click", abrir);
-    $("dropzone").addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && abrir());
+    for (const id of ["dropzone", "ctaVacio"]) {
+      $(id).addEventListener("click", abrir);
+      $(id).addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          abrir();
+        }
+      });
+    }
     $("btnAgregar").addEventListener("click", abrir);
     $("btnQuitarTodo").addEventListener("click", () => {
       archivos.length = 0;
@@ -1073,16 +1228,20 @@
     $("btnPrev").addEventListener("click", () => irA(paginaActual - 1));
     $("btnNext").addEventListener("click", () => irA(paginaActual + 1));
     $("inPagina").addEventListener("change", (e) => irA(parseInt(e.target.value, 10) - 1 || 0));
+    $("btnZoomMenos").addEventListener("click", () => cambiarZoom(-1));
+    $("btnZoomMas").addEventListener("click", () => cambiarZoom(1));
+    $("zoomValor").addEventListener("click", () => cambiarZoom(0));
     document.addEventListener("keydown", (e) => {
       if (!srcDoc || e.target.closest("input, textarea, select, [contenteditable]")) return;
       if (e.key === "ArrowLeft") irA(paginaActual - 1);
       if (e.key === "ArrowRight") irA(paginaActual + 1);
     });
-    let anchoPrevio = window.innerWidth;
+    let tamPrevio = `${window.innerWidth}x${window.innerHeight}`;
     window.addEventListener("resize", () => {
-      if (Math.abs(window.innerWidth - anchoPrevio) < 40) return;
-      anchoPrevio = window.innerWidth;
-      programarVista();
+      const t = `${window.innerWidth}x${window.innerHeight}`;
+      if (t === tamPrevio) return;
+      tamPrevio = t;
+      if (srcDoc) programarVista();
     });
   }
 
@@ -1092,27 +1251,40 @@
       botones.forEach((b) => {
         const on = b.dataset.tab === id;
         b.classList.toggle("on", on);
-        b.setAttribute("aria-selected", on);
+        b.setAttribute("aria-selected", String(on));
       });
       document.querySelectorAll("[data-panel]").forEach((p) => (p.hidden = p.dataset.panel !== id));
       try {
-        localStorage.setItem("foleo.pestana", id);
+        localStorage.setItem("foleo.pestana2", id);
       } catch (e) {}
     };
     botones.forEach((b) => b.addEventListener("click", () => mostrar(b.dataset.tab)));
-    let inicial = "num";
+    let inicial = "basico";
     try {
-      inicial = localStorage.getItem("foleo.pestana") || "num";
+      inicial = localStorage.getItem("foleo.pestana2") || "basico";
     } catch (e) {}
-    mostrar(document.querySelector(`[data-tab="${inicial}"]`) ? inicial : "num");
+    mostrar(document.querySelector(`[data-tab="${inicial}"]`) ? inicial : "basico");
+  }
+
+  // Botones "?" de ayuda: texto al pasar el mouse y aviso al hacer clic (útil en pantallas táctiles)
+  function configurarAyudas() {
+    document.querySelectorAll("[data-ayuda]").forEach((el) => (el.title = el.dataset.ayuda));
+    const mostrar = (e) => {
+      const el = e.target.closest("[data-ayuda]");
+      if (!el) return;
+      if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      e.stopPropagation();
+      document.querySelectorAll(".toast.ayuda").forEach((t) => t.remove());
+      aviso(el.dataset.ayuda, "info ayuda", 9000);
+    };
+    document.addEventListener("click", mostrar, true);
+    document.addEventListener("keydown", mostrar, true);
   }
 
   function configurarTema() {
     $("btnTema").addEventListener("click", () => {
-      const actual =
-        document.documentElement.dataset.theme ||
-        (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
-      const nuevo = actual === "light" ? "dark" : "light";
+      const nuevo = document.documentElement.dataset.theme === "light" ? "dark" : "light";
       document.documentElement.dataset.theme = nuevo;
       try {
         localStorage.setItem("foleo.tema", nuevo);
@@ -1128,7 +1300,9 @@
   configurarArrastre();
   configurarTema();
   configurarPestanas();
+  configurarAyudas();
   $("btnFoliar").addEventListener("click", foliar);
   actualizarUI();
   actualizarVista();
+  if (document.fonts) document.fonts.addEventListener("loadingdone", pintarFolioSimulado);
 })();
