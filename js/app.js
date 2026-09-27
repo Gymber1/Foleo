@@ -54,6 +54,7 @@
   let numPaginas = 0;
   let paginaActual = 0; // índice global (sobre todos los documentos seleccionados)
   let docVista = -1; // -1 = todos; si no, índice del documento que se está viendo
+  let irAlInicio = false; // en la próxima reconstrucción, ir a la página donde empieza el foliado
   let resultadoUrls = [];
   let ocupado = false;
   let zoom = 1;
@@ -516,6 +517,7 @@
       }
     }
     cargando(false);
+    irAlInicio = true;
     await reconstruir();
   }
 
@@ -542,7 +544,9 @@
       if (docVista >= lista.length || lista.length < 2) docVista = -1;
       const r = rangoVista();
       paginaActual = Math.min(Math.max(paginaActual, r.ini), r.fin - 1);
+      if (irAlInicio) paginaActual = paginaInicial();
     }
+    irAlInicio = false;
     pintarArchivos();
     pintarSelectorDoc();
     actualizarUI();
@@ -788,7 +792,11 @@
     // Cada modo usa otros documentos en la vista previa (p. ej. Grupos solo los que están en un grupo):
     // al cambiar de modo se vuelve a armar
     document.querySelectorAll('input[data-cfg="modoVarios"]').forEach((r) =>
-      r.addEventListener("change", () => r.checked && reconstruir())
+      r.addEventListener("change", () => {
+        if (!r.checked) return;
+        irAlInicio = true;
+        reconstruir();
+      })
     );
     modal.addEventListener("pointerdown", (e) => e.target === modal && cerrarModal());
     document.addEventListener("keydown", (e) => {
@@ -946,6 +954,19 @@
       g -= pags;
     }
     return paginaActual;
+  }
+
+  // Página donde empieza el foliado (la que lleva el número inicial) dentro de lo que se está viendo:
+  // con «Última a Primera» es la última página foliada; con «Primera a Última», la primera.
+  function paginaInicial() {
+    const r = rangoVista();
+    const pg = planGlobal();
+    if (cfg.orden === "inverso") {
+      for (let g = r.fin - 1; g >= r.ini; g--) if (pg.info(g)) return g;
+      return Math.max(r.ini, r.fin - 1);
+    }
+    for (let g = r.ini; g < r.fin; g++) if (pg.info(g)) return g;
+    return r.ini;
   }
 
   // Páginas que se recorren en la vista previa: todas o solo las del documento elegido
@@ -1751,10 +1772,16 @@
     $("inPagina").addEventListener("change", (e) => irA(rangoVista().ini + (parseInt(e.target.value, 10) - 1 || 0)));
     $("selDoc").addEventListener("change", (e) => {
       docVista = Number(e.target.value);
-      if (docVista >= 0) paginaActual = rangoVista().ini; // "Todos" conserva la página que se estaba viendo
+      if (docVista >= 0) paginaActual = paginaInicial(); // "Todos" conserva la página que se estaba viendo
       pintarSelectorDoc();
       actualizarVista();
     });
+    // Al cambiar el orden se muestra la página donde empieza el conteo
+    document.querySelectorAll('input[data-cfg="orden"]').forEach((r) =>
+      r.addEventListener("change", () => {
+        if (r.checked && srcDoc) paginaActual = paginaInicial();
+      })
+    );
     $("btnZoomMenos").addEventListener("click", () => cambiarZoom(-1));
     $("btnZoomMas").addEventListener("click", () => cambiarZoom(1));
     $("zoomValor").addEventListener("click", () => cambiarZoom(0));
