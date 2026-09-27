@@ -505,6 +505,7 @@ p {
 .upload-card {
   position: relative;
   overflow: hidden;
+  overflow: clip;
   padding: 24px;
   background: var(--upload-bg);
   flex: none;
@@ -722,6 +723,7 @@ body.dragover .dropzone {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow: clip;
   box-shadow: var(--panel-shadow);
 }
 .tabs {
@@ -1018,6 +1020,10 @@ input[type="range"] {
 }
 .seg-opt input {
   position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
 }
@@ -1140,6 +1146,7 @@ input[type="range"] {
   background: var(--input-bg);
   box-shadow: var(--input-shadow);
   overflow: hidden;
+  overflow: clip;
   transition: box-shadow 0.15s;
 }
 .text-editor:focus-within {
@@ -1456,6 +1463,7 @@ input[type="range"] {
   color: var(--shape-active-text);
 }
 .check-card {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 16px;
@@ -1471,6 +1479,11 @@ input[type="range"] {
 }
 .check-card input {
   position: absolute;
+  top: 18px;
+  left: 16px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
 }
@@ -1791,6 +1804,7 @@ input[type="range"] {
   min-width: 0;
   min-height: 80vh;
   overflow: hidden;
+  overflow: clip;
   border-radius: 16px;
   border: 1px solid var(--preview-border);
   background: var(--preview-bg);
