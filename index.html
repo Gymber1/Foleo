@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.6" />
+    <link rel="stylesheet" href="css/styles.css?v=2.4.7" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -54,6 +54,8 @@
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
       <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/></symbol>
       <symbol id="i-baseline" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="m6 16 6-12 6 12"/><path d="M8 12h8"/></symbol>
+      <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></symbol>
+      <symbol id="i-files" viewBox="0 0 24 24"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/></symbol>
       <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></symbol>
     </svg>
 
@@ -81,7 +83,14 @@
               <p>Arrastra documentos aquí o haz clic para explorar</p>
             </div>
             <ul id="listaArchivos" class="files"></ul>
-            <button id="btnQuitarTodo" class="link-btn" hidden>Quitar todos los archivos</button>
+            <div class="docs-resumen" id="resumenDocs" hidden>
+              <span class="icon-chip"><svg class="i"><use href="#i-files" /></svg></span>
+              <div class="docs-texto">
+                <b id="resumenTitulo"></b>
+                <small id="resumenDetalle"></small>
+              </div>
+              <button type="button" class="btn-ghost" id="btnVerDocs">Ver documentos</button>
+            </div>
           </div>
         </section>
 
@@ -551,15 +560,39 @@
       <svg class="i ic-sun"><use href="#i-sun" /></svg>
       <svg class="i ic-moon"><use href="#i-moon" /></svg>
     </button>
+    <!-- Modal: documentos -->
+    <div class="modal-bg" id="modalDocs" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+        <div class="modal-head">
+          <div>
+            <h2 id="modalTitulo">Documentos</h2>
+            <p>Arrastra o usa las flechas para cambiar el orden. Desmarca los que no quieras foliar.</p>
+          </div>
+          <button type="button" class="zbtn" id="btnCerrarModal" aria-label="Cerrar"><svg class="i"><use href="#i-x" /></svg></button>
+        </div>
+        <ul class="files modal-list" id="listaModal"></ul>
+        <div class="modal-foot">
+          <div class="modal-info">
+            <span id="modalTotal"></span>
+            <button type="button" id="btnQuitarTodo" class="link-btn">Quitar todos</button>
+          </div>
+          <div class="modal-btns">
+            <button type="button" class="btn-ghost" id="btnModalAgregar"><svg class="i"><use href="#i-plus" /></svg> Añadir más</button>
+            <button type="button" class="btn-primary" id="btnModalListo">Listo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="toasts" id="toasts" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.4.6"></script>
-    <script src="js/fuentes.js?v=2.4.6"></script>
-    <script src="js/formato.js?v=2.4.6"></script>
-    <script src="js/word.js?v=2.4.6"></script>
-    <script src="js/app.js?v=2.4.6"></script>
+    <script src="js/ttc.js?v=2.4.7"></script>
+    <script src="js/fuentes.js?v=2.4.7"></script>
+    <script src="js/formato.js?v=2.4.7"></script>
+    <script src="js/word.js?v=2.4.7"></script>
+    <script src="js/app.js?v=2.4.7"></script>
   </body>
 </html>

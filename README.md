@@ -35,6 +35,7 @@ Los archivos se procesan en tu equipo y no se suben a ningún servidor.
 
 **Archivos**
 - PDF y Word (.docx). Varios archivos se unen en el orden elegido y se folian como uno solo.
+- Con varios documentos, el botón «Ver documentos» abre una ventana para ordenarlos (arrastrando o con flechas) y elegir cuáles incluir.
 - Vista previa en vivo de cada página tal como quedará.
 
 > Los .docx se convierten a PDF dentro del navegador como imágenes. Para máxima calidad y texto

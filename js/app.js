@@ -118,7 +118,11 @@
   }
 
   const hoy = () => new Date().toLocaleDateString("es", { day: "2-digit", month: "2-digit", year: "numeric" });
-  const nombreDoc = () => (archivos[0] ? archivos[0].nombre.replace(/\.(pdf|docx)$/i, "") : "documento");
+  const activos = () => archivos.filter((a) => a.activo);
+  const nombreDoc = () => {
+    const a = activos()[0] || archivos[0];
+    return a ? a.nombre.replace(/\.(pdf|docx)$/i, "") : "documento";
+  };
 
   function textoFolio(n, plan, idx) {
     let letras = Formato.aLetras(n);
@@ -426,7 +430,7 @@
         }
         const { doc, cifrado } = await cargarPdf(bytes);
         if (cifrado) aviso(`"${f.name}" está protegido; el PDF foliado podría no abrirse correctamente.`, "warn", 8000);
-        archivos.push({ nombre: f.name, tipo, bytes, doc, paginas: doc.getPageCount() });
+        archivos.push({ nombre: f.name, tipo, bytes, doc, paginas: doc.getPageCount(), activo: true });
       } catch (e) {
         console.error(e);
         aviso(`No se pudo leer "${f.name}": ${e.message || e}`, "err", 8000);
@@ -436,9 +440,9 @@
     await reconstruir();
   }
 
-  async function unirDocumentos() {
+  async function unirDocumentos(lista = activos()) {
     const unido = await PDFDocument.create();
-    for (const a of archivos) {
+    for (const a of lista) {
       const paginas = await unido.copyPages(a.doc, a.doc.getPageIndices());
       paginas.forEach((p) => unido.addPage(p));
     }
@@ -447,13 +451,14 @@
 
   async function reconstruir() {
     ocultarResultado();
-    if (!archivos.length) {
+    const lista = activos();
+    if (!lista.length) {
       srcDoc = null;
       numPaginas = 0;
       paginaActual = 0;
     } else {
       cargando(true, "Preparando vista previa…");
-      srcDoc = archivos.length === 1 ? archivos[0].doc : await unirDocumentos();
+      srcDoc = lista.length === 1 ? lista[0].doc : await unirDocumentos(lista);
       numPaginas = srcDoc.getPageCount();
       paginaActual = Math.min(paginaActual, numPaginas - 1);
     }
@@ -471,55 +476,181 @@
     return svg;
   };
 
+  const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+
+  // Fila de un documento. En el modal lleva asa para arrastrar, casilla, número de orden y flechas.
+  function filaDocumento(a, i, enModal) {
+    const li = document.createElement("li");
+    li.classList.toggle("inactivo", !a.activo);
+    if (enModal) {
+      li.draggable = true;
+      li.dataset.idx = i;
+      const asa = document.createElement("span");
+      asa.className = "grip";
+      asa.title = "Arrastra para cambiar el orden";
+      asa.append(icono("grip"));
+      const chk = document.createElement("input");
+      chk.type = "checkbox";
+      chk.className = "doc-check";
+      chk.checked = a.activo;
+      chk.title = "Incluir en el foliado";
+      chk.setAttribute("aria-label", `Incluir ${a.nombre}`);
+      chk.addEventListener("change", () => {
+        if (!chk.checked && activos().length === 1) {
+          chk.checked = true;
+          aviso("Debe quedar al menos un documento seleccionado.", "warn");
+          return;
+        }
+        a.activo = chk.checked;
+        reconstruir();
+      });
+      const orden = document.createElement("span");
+      orden.className = "orden";
+      orden.textContent = i + 1;
+      li.append(asa, chk, orden);
+    }
+    const tag = document.createElement("span");
+    tag.className = `ftag ${a.tipo}`;
+    tag.textContent = a.tipo === "docx" ? "DOCX" : "PDF";
+    const nombre = document.createElement("span");
+    nombre.className = "fname";
+    nombre.textContent = a.nombre;
+    nombre.title = a.nombre;
+    const meta = document.createElement("span");
+    meta.className = "fmeta";
+    meta.textContent = `${a.paginas} pág.`;
+    li.append(tag, nombre, meta);
+    const botones = enModal
+      ? [
+          ["arrow-up", "Subir", i === 0, () => mover(i, -1)],
+          ["arrow-down", "Bajar", i === archivos.length - 1, () => mover(i, 1)],
+          ["x", "Quitar", false, () => quitar(i)],
+        ]
+      : [["x", "Quitar", false, () => quitar(i)]];
+    for (const [ic, titulo, desactivado, fn] of botones) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini";
+      b.title = titulo;
+      b.setAttribute("aria-label", `${titulo} ${a.nombre}`);
+      b.disabled = desactivado;
+      b.append(icono(ic));
+      b.addEventListener("click", fn);
+      li.append(b);
+    }
+    return li;
+  }
+
   function pintarArchivos() {
+    const varios = archivos.length > 1;
+    const lista = activos();
+    const paginasSel = lista.reduce((t, a) => t + a.paginas, 0);
+
+    // Tarjeta: una fila si hay un documento; un resumen con botón si hay varios
     const ul = $("listaArchivos");
     ul.innerHTML = "";
-    archivos.forEach((a, i) => {
-      const li = document.createElement("li");
-      const tag = document.createElement("span");
-      tag.className = `ftag ${a.tipo}`;
-      tag.textContent = a.tipo === "docx" ? "DOCX" : "PDF";
-      const nombre = document.createElement("span");
-      nombre.className = "fname";
-      nombre.textContent = a.nombre;
-      nombre.title = a.nombre;
-      const meta = document.createElement("span");
-      meta.className = "fmeta";
-      meta.textContent = `${a.paginas} pág.`;
-      li.append(tag, nombre, meta);
-      const botones = [
-        ["arrow-up", "Subir", i === 0, () => mover(i, -1)],
-        ["arrow-down", "Bajar", i === archivos.length - 1, () => mover(i, 1)],
-        ["x", "Quitar", false, () => quitar(i)],
-      ];
-      for (const [ic, titulo, desactivado, fn] of botones) {
-        if (archivos.length === 1 && ic !== "x") continue;
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "mini";
-        b.title = titulo;
-        b.setAttribute("aria-label", titulo);
-        b.disabled = desactivado;
-        b.append(icono(ic));
-        b.addEventListener("click", fn);
-        li.append(b);
-      }
-      ul.append(li);
-    });
-    $("btnQuitarTodo").hidden = archivos.length < 2;
+    if (archivos.length === 1) ul.append(filaDocumento(archivos[0], 0, false));
+    $("resumenDocs").hidden = !varios;
+    if (varios) {
+      $("resumenTitulo").textContent = plural(archivos.length, "documento", "documentos");
+      $("resumenDetalle").textContent =
+        lista.length === archivos.length
+          ? `${plural(paginasSel, "página", "páginas")} en total`
+          : `${lista.length} de ${archivos.length} seleccionados · ${plural(paginasSel, "página", "páginas")}`;
+    }
     document.querySelector(".upload-card").classList.toggle("con-archivos", archivos.length > 0);
+
+    // Modal
+    const ulm = $("listaModal");
+    ulm.innerHTML = "";
+    archivos.forEach((a, i) => ulm.append(filaDocumento(a, i, true)));
+    $("modalTitulo").textContent = `Documentos (${archivos.length})`;
+    $("modalTotal").textContent = `${lista.length} de ${archivos.length} seleccionados · ${plural(paginasSel, "página", "páginas")}`;
+    if (!varios && !$("modalDocs").hidden) cerrarModal();
   }
 
   function mover(i, d) {
-    const j = i + d;
-    if (j < 0 || j >= archivos.length) return;
-    [archivos[i], archivos[j]] = [archivos[j], archivos[i]];
+    moverA(i, i + d);
+  }
+
+  function moverA(desde, hasta) {
+    if (desde === hasta || hasta < 0 || hasta >= archivos.length) return;
+    const [a] = archivos.splice(desde, 1);
+    archivos.splice(hasta, 0, a);
     reconstruir();
   }
 
   function quitar(i) {
     archivos.splice(i, 1);
+    if (archivos.length && !activos().length) archivos.forEach((a) => (a.activo = true));
     reconstruir();
+  }
+
+  // Modal "Ver documentos"
+  function abrirModal() {
+    pintarArchivos();
+    $("modalDocs").hidden = false;
+    document.body.classList.add("modal-abierto");
+    $("btnModalListo").focus();
+  }
+
+  function cerrarModal() {
+    if ($("modalDocs").hidden) return;
+    $("modalDocs").hidden = true;
+    document.body.classList.remove("modal-abierto");
+    if (archivos.length > 1) $("btnVerDocs").focus();
+  }
+
+  function configurarModal() {
+    const modal = $("modalDocs");
+    $("btnVerDocs").addEventListener("click", abrirModal);
+    $("btnCerrarModal").addEventListener("click", cerrarModal);
+    $("btnModalListo").addEventListener("click", cerrarModal);
+    $("btnModalAgregar").addEventListener("click", () => $("inputArchivo").click());
+    modal.addEventListener("pointerdown", (e) => e.target === modal && cerrarModal());
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.hidden) cerrarModal();
+    });
+
+    // Arrastrar y soltar para ordenar
+    const ul = $("listaModal");
+    let origen = null;
+    const limpiar = () => ul.querySelectorAll("li").forEach((li) => li.classList.remove("antes", "despues", "moviendo"));
+    ul.addEventListener("dragstart", (e) => {
+      const li = e.target.closest("li");
+      if (!li) return;
+      origen = Number(li.dataset.idx);
+      li.classList.add("moviendo");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(origen));
+    });
+    ul.addEventListener("dragover", (e) => {
+      if (origen === null) return;
+      const li = e.target.closest("li");
+      if (!li) return;
+      e.preventDefault();
+      const r = li.getBoundingClientRect();
+      const arriba = e.clientY < r.top + r.height / 2;
+      ul.querySelectorAll("li").forEach((x) => x.classList.remove("antes", "despues"));
+      li.classList.add(arriba ? "antes" : "despues");
+    });
+    ul.addEventListener("drop", (e) => {
+      if (origen === null) return;
+      e.preventDefault();
+      const li = e.target.closest("li");
+      const o = origen;
+      origen = null;
+      limpiar();
+      if (!li) return;
+      const r = li.getBoundingClientRect();
+      let destino = Number(li.dataset.idx) + (e.clientY < r.top + r.height / 2 ? 0 : 1);
+      if (destino > o) destino--;
+      moverA(o, destino);
+    });
+    ul.addEventListener("dragend", () => {
+      origen = null;
+      limpiar();
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -750,7 +881,8 @@
     $("progreso").hidden = false;
     progreso(0, "Preparando…");
     try {
-      const doc = archivos.length === 1 ? (await cargarPdf(archivos[0].bytes)).doc : await unirDocumentos();
+      const lista = activos();
+      const doc = lista.length === 1 ? (await cargarPdf(lista[0].bytes)).doc : await unirDocumentos(lista);
       const total = doc.getPageCount();
       const plan = planFoliado(total);
       if (!plan.cantidad) throw new Error("Con estos ajustes no hay ninguna página para foliar.");
@@ -771,7 +903,7 @@
       const blob = new Blob([bytes], { type: "application/pdf" });
       resultadoUrl = URL.createObjectURL(blob);
 
-      const nombre = `${nombreDoc()}${archivos.length > 1 ? "_unido" : ""}_foliado.pdf`;
+      const nombre = `${nombreDoc()}${lista.length > 1 ? "_unido" : ""}_foliado.pdf`;
       $("btnDescargar").href = resultadoUrl;
       $("btnDescargar").download = nombre;
       $("btnAbrir").href = resultadoUrl;
@@ -1227,6 +1359,7 @@
     $("btnAgregar").addEventListener("click", abrir);
     $("btnQuitarTodo").addEventListener("click", () => {
       archivos.length = 0;
+      cerrarModal();
       reconstruir();
     });
     input.addEventListener("change", () => {
@@ -1264,7 +1397,7 @@
     $("btnZoomMas").addEventListener("click", () => cambiarZoom(1));
     $("zoomValor").addEventListener("click", () => cambiarZoom(0));
     document.addEventListener("keydown", (e) => {
-      if (!srcDoc || e.target.closest("input, textarea, select, [contenteditable]")) return;
+      if (!srcDoc || !$("modalDocs").hidden || e.target.closest("input, textarea, select, [contenteditable]")) return;
       if (e.key === "ArrowLeft") irA(paginaActual - 1);
       if (e.key === "ArrowRight") irA(paginaActual + 1);
     });
@@ -1333,6 +1466,7 @@
   configurarTema();
   configurarPestanas();
   configurarAyudas();
+  configurarModal();
   $("btnFoliar").addEventListener("click", foliar);
   actualizarUI();
   actualizarVista();
