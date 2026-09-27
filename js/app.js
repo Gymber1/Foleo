@@ -785,10 +785,10 @@
         }, 0);
       })
     );
+    // Cada modo usa otros documentos en la vista previa (p. ej. Grupos solo los que están en un grupo):
+    // al cambiar de modo se vuelve a armar
     document.querySelectorAll('input[data-cfg="modoVarios"]').forEach((r) =>
-      r.addEventListener("change", () => {
-        if (!$("modalDocs").hidden) pintarArchivos();
-      })
+      r.addEventListener("change", () => r.checked && reconstruir())
     );
     modal.addEventListener("pointerdown", (e) => e.target === modal && cerrarModal());
     document.addEventListener("keydown", (e) => {
