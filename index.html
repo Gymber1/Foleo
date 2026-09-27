@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.5.0" />
+    <link rel="stylesheet" href="css/styles.css?v=2.5.1" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -56,6 +56,8 @@
       <symbol id="i-baseline" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="m6 16 6-12 6 12"/><path d="M8 12h8"/></symbol>
       <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></symbol>
       <symbol id="i-files" viewBox="0 0 24 24"><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/></symbol>
+      <symbol id="i-folders" viewBox="0 0 24 24"><path d="M20 17a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.9a2 2 0 0 1-1.69-.9l-.81-1.2a2 2 0 0 0-1.67-.9H8a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2Z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/></symbol>
+      <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></symbol>
       <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></symbol>
     </svg>
 
@@ -79,13 +81,17 @@
                   <input type="radio" name="modoVarios" value="junto" data-cfg="modoVarios" />
                   <span><svg class="i"><use href="#i-files" /></svg>Unir</span>
                 </label>
+                <label class="seg-opt" title="Grupos: tú eliges dónde reinicia la numeración (p. ej. documentos 1–5 y 6–10); un PDF por grupo">
+                  <input type="radio" name="modoVarios" value="grupos" data-cfg="modoVarios" />
+                  <span><svg class="i"><use href="#i-folders" /></svg>Grupos</span>
+                </label>
                 <label class="seg-opt" title="Por separado: cada documento con su propia numeración y su propio PDF">
                   <input type="radio" name="modoVarios" value="separado" data-cfg="modoVarios" />
                   <span><svg class="i"><use href="#i-layers" /></svg>Separado</span>
                 </label>
               </div>
-              <button id="btnAgregar" class="btn-primary sm">
-                <svg class="i"><use href="#i-plus" /></svg> Añadir
+              <button id="btnAgregar" class="btn-primary sm" title="Añadir documentos">
+                <svg class="i"><use href="#i-plus" /></svg><span class="txt"> Añadir</span>
               </button>
             </div>
             <div class="dropzone" id="dropzone" tabindex="0" role="button">
@@ -582,8 +588,21 @@
           <div>
             <h2 id="modalTitulo">Documentos</h2>
             <p>Arrastra o usa las flechas para cambiar el orden. Desmarca los que no quieras foliar.</p>
+            <div class="segmented modo-varios modal-modo" role="radiogroup" aria-label="Cómo foliar los documentos">
+              <label class="seg-opt"><input type="radio" name="modoVariosModal" value="junto" data-cfg="modoVarios" /><span><svg class="i"><use href="#i-files" /></svg>Unir en un PDF</span></label>
+              <label class="seg-opt"><input type="radio" name="modoVariosModal" value="grupos" data-cfg="modoVarios" /><span><svg class="i"><use href="#i-folders" /></svg>Por grupos</span></label>
+              <label class="seg-opt"><input type="radio" name="modoVariosModal" value="separado" data-cfg="modoVarios" /><span><svg class="i"><use href="#i-layers" /></svg>Por separado</span></label>
+            </div>
           </div>
           <button type="button" class="zbtn" id="btnCerrarModal" aria-label="Cerrar"><svg class="i"><use href="#i-x" /></svg></button>
+        </div>
+        <div class="herr-grupos" id="herrGrupos" hidden>
+          <svg class="i"><use href="#i-scissors" /></svg>
+          <span>Agrupar cada</span>
+          <input type="number" id="inAgruparCada" min="1" value="5" aria-label="Documentos por grupo" />
+          <span>documentos</span>
+          <button type="button" class="btn-ghost" id="btnAgruparCada">Aplicar</button>
+          <button type="button" class="link-btn" id="btnSinGrupos">Quitar grupos</button>
         </div>
         <ul class="files modal-list" id="listaModal"></ul>
         <div class="modal-foot">
@@ -604,10 +623,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.5.0"></script>
-    <script src="js/fuentes.js?v=2.5.0"></script>
-    <script src="js/formato.js?v=2.5.0"></script>
-    <script src="js/word.js?v=2.5.0"></script>
-    <script src="js/app.js?v=2.5.0"></script>
+    <script src="js/ttc.js?v=2.5.1"></script>
+    <script src="js/fuentes.js?v=2.5.1"></script>
+    <script src="js/formato.js?v=2.5.1"></script>
+    <script src="js/word.js?v=2.5.1"></script>
+    <script src="js/app.js?v=2.5.1"></script>
   </body>
 </html>

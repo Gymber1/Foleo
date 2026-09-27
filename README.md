@@ -34,8 +34,12 @@ Los archivos se procesan en tu equipo y no se suben a ningún servidor.
 - Rectángulo, rectángulo redondeado u óvalo, con grosor y color de borde, fondo de color y espacio interior.
 
 **Archivos**
-- PDF y Word (.docx). Con varios archivos eliges: **unirlos** en un solo PDF con numeración continua,
-  o foliarlos **por separado** (cada uno con su propia numeración; se descargan sueltos o en un ZIP).
+- PDF y Word (.docx). Con varios archivos eliges:
+  - **Unir:** un solo PDF con numeración continua.
+  - **Grupos:** la numeración se reinicia donde tú indiques (p. ej. documentos 1–5 y 6–10), con un PDF por grupo.
+    Puedes marcar los cortes a mano o usar «Agrupar cada N documentos».
+  - **Separado:** cada documento con su propia numeración.
+  Con varios PDF de salida se descargan sueltos o todos en un ZIP.
 - Con varios documentos, el botón «Ver documentos» abre una ventana para ordenarlos (arrastrando o con flechas) y elegir cuáles incluir.
 - Vista previa en vivo de cada página tal como quedará.
 
