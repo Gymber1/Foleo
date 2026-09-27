@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Foleo · Foliar PDF</title>
+    <meta
+      name="description"
+      content="Folia (numera) tus PDF y Word en el navegador: elige orden, página inicial, posición, fuente, formato y recuadro. Nada se sube a internet."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='10' y='4' width='44' height='56' rx='6' fill='%234f7cff'/><text x='32' y='42' font-family='Arial' font-weight='700' font-size='24' text-anchor='middle' fill='white'>01</text></svg>"
+    />
+    <script>
+      try {
+        var t = localStorage.getItem("foleo.tema");
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">01</div>
+        <div>
+          <h1>Foleo</h1>
+          <p>Foliado de PDF y Word personalizable · 100% en tu navegador</p>
+        </div>
+      </div>
+      <button id="btnTema" class="icon-btn" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18V4a8 8 0 0 1 0 16Z"/></svg>
+      </button>
+    </header>
+
+    <main class="layout">
+      <!-- ============ PANEL DE AJUSTES ============ -->
+      <aside class="panel">
+        <!-- Archivos -->
+        <section class="card compact">
+          <div class="card-head">
+            <h2>Archivos</h2>
+            <div class="row">
+              <button id="btnQuitarTodo" class="btn small ghost" hidden>Quitar todo</button>
+              <button id="btnAgregar" class="btn small">＋ Agregar PDF o Word</button>
+            </div>
+          </div>
+          <ul id="listaArchivos" class="files"></ul>
+          <p class="hint" id="hintArchivos">
+            Acepta <b>.pdf</b> y <b>.docx</b>. Varios archivos se unen en el orden de la lista.
+          </p>
+        </section>
+
+        <!-- Ajustes en pestañas -->
+        <section class="card settings">
+          <nav class="tabs" role="tablist" aria-label="Ajustes del folio">
+            <button type="button" role="tab" data-tab="num">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3v10M10 7h4a2 2 0 0 1 0 4h-2a2 2 0 0 0 0 4h4M4 17h6"/></svg>
+              Numeración
+            </button>
+            <button type="button" role="tab" data-tab="texto">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg>
+              Texto
+            </button>
+            <button type="button" role="tab" data-tab="fuente">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19 10 5l6 14M6.5 14h7M17 19v-7m0 0a2.5 2.5 0 1 1 3 2.4"/></svg>
+              Fuente
+            </button>
+            <button type="button" role="tab" data-tab="pos">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><rect x="13" y="6" width="3.5" height="3" rx=".5"/></svg>
+              Posición
+            </button>
+            <button type="button" role="tab" data-tab="caja">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="10" rx="3"/></svg>
+              Recuadro
+            </button>
+          </nav>
+
+          <!-- ===== Numeración ===== -->
+          <div class="tabpanel" data-panel="num" role="tabpanel">
+            <div class="field">
+              <span class="label">Orden del foliado</span>
+              <div class="seg wide" role="radiogroup">
+                <label class="segopt"><input type="radio" name="orden" value="inverso" data-cfg="orden" /><span>Última → primera</span></label>
+                <label class="segopt"><input type="radio" name="orden" value="normal" data-cfg="orden" /><span>Primera → última</span></label>
+              </div>
+            </div>
+            <div class="grid3">
+              <label class="field">
+                <span class="label">Desde pág.</span>
+                <input type="number" min="1" step="1" data-cfg="desde" id="inDesde" />
+              </label>
+              <label class="field">
+                <span class="label">Hasta pág.</span>
+                <input type="number" min="1" step="1" data-cfg="hasta" id="inHasta" placeholder="Última" />
+              </label>
+              <label class="field">
+                <span class="label">N° inicial</span>
+                <input type="number" min="0" step="1" data-cfg="inicio" />
+              </label>
+            </div>
+            <div class="grid2">
+              <label class="field">
+                <span class="label">Qué páginas</span>
+                <select data-cfg="filtro">
+                  <option value="todas">Todas</option>
+                  <option value="impares">Solo impares (anverso)</option>
+                  <option value="pares">Solo pares (reverso)</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="label">Excluir páginas</span>
+                <input type="text" data-cfg="excluir" placeholder="ej. 2, 5-7" />
+              </label>
+            </div>
+            <p class="summary" id="resumenPlan"></p>
+          </div>
+
+          <!-- ===== Texto ===== -->
+          <div class="tabpanel" data-panel="texto" role="tabpanel" hidden>
+            <div class="grid2">
+              <label class="field">
+                <span class="label">Estilo del número</span>
+                <select data-cfg="estilo">
+                  <option value="arabigo">1, 2, 3…</option>
+                  <option value="romano-may">I, II, III…</option>
+                  <option value="romano-min">i, ii, iii…</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="label">Ceros a la izquierda</span>
+                <select data-cfg="digitos" data-num="1">
+                  <option value="1">Ninguno (1)</option>
+                  <option value="2">01</option>
+                  <option value="3">001</option>
+                  <option value="4">0001</option>
+                  <option value="5">00001</option>
+                </select>
+              </label>
+            </div>
+            <div class="field">
+              <div class="label-row">
+                <span class="label">Texto del folio</span>
+                <select id="selPlantilla" class="mini-select" title="Plantillas rápidas">
+                  <option value="">Plantillas…</option>
+                  <option value="{n}">01</option>
+                  <option value="Folio {n}">Folio 01</option>
+                  <option value="Folio N° {n}">Folio N° 01</option>
+                  <option value="{n} ({letras})">01 (uno)</option>
+                  <option value="{n}&#10;{letras}">01 ⏎ uno</option>
+                  <option value="Folio {n}&#10;{letras}">Folio 01 ⏎ uno</option>
+                  <option value="Página {n} de {total}">Página 01 de 20</option>
+                  <option value="{n}/{total}">01/20</option>
+                  <option value="- {n} -">- 01 -</option>
+                </select>
+              </div>
+              <textarea data-cfg="plantilla" id="inPlantilla" rows="2" spellcheck="false" aria-label="Texto del folio"></textarea>
+            </div>
+            <div class="chips">
+              <button type="button" class="chip" data-ins="{n}" title="Número de folio">{n}</button>
+              <button type="button" class="chip" data-ins="{letras}" title="Número escrito en letras">{letras}</button>
+              <button type="button" class="chip" data-ins="{total}" title="Último número de folio">{total}</button>
+              <button type="button" class="chip" data-ins="{pag}" title="Número real de la página en el archivo">{pag}</button>
+              <select data-cfg="letrasCaso" class="mini-select" title="Cómo escribir {letras}">
+                <option value="min">letras: minúsculas</option>
+                <option value="cap">letras: Primera mayúscula</option>
+                <option value="may">letras: MAYÚSCULAS</option>
+              </select>
+            </div>
+            <div class="example">Ejemplo: <span id="ejemplo"></span></div>
+          </div>
+
+          <!-- ===== Fuente ===== -->
+          <div class="tabpanel" data-panel="fuente" role="tabpanel" hidden>
+            <div class="toolbar" role="toolbar" aria-label="Formato de fuente">
+              <div class="fontpicker" id="fontpicker">
+                <button type="button" class="fp-btn" id="fpBtn" aria-haspopup="listbox" aria-expanded="false">
+                  <span id="fpLabel">Helvetica</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>
+                </button>
+                <div class="fp-pop" id="fpPop" hidden>
+                  <input type="search" id="fpBuscar" placeholder="Buscar fuente (ej. Arial, Calibri…)" autocomplete="off" />
+                  <div class="fp-list" id="fpLista" role="listbox"></div>
+                  <div class="fp-actions">
+                    <button type="button" class="btn small" id="btnSubirFuente">＋ Subir .ttf/.otf</button>
+                    <button type="button" class="btn small" id="btnFuentesPC">🖥 Fuentes de mi PC</button>
+                  </div>
+                </div>
+              </div>
+              <input type="number" class="size" min="4" max="200" step="0.5" list="tamanos" data-cfg="tamano" title="Tamaño (pt)" aria-label="Tamaño de fuente" />
+              <datalist id="tamanos">
+                <option value="8"></option><option value="9"></option><option value="10"></option><option value="11"></option>
+                <option value="12"></option><option value="14"></option><option value="16"></option><option value="18"></option>
+                <option value="20"></option><option value="24"></option><option value="28"></option><option value="36"></option>
+                <option value="48"></option><option value="72"></option>
+              </datalist>
+            </div>
+            <div class="toolbar">
+              <div class="seg">
+                <button type="button" class="tbtn" data-toggle="negrita" title="Negrita"><b>N</b></button>
+                <button type="button" class="tbtn" data-toggle="cursiva" title="Cursiva"><i style="font-family: Georgia, serif">K</i></button>
+                <button type="button" class="tbtn" data-toggle="subrayado" title="Subrayado"><u>S</u></button>
+              </div>
+              <label class="color-btn" title="Color de fuente">
+                <span class="color-a">A</span>
+                <input type="color" data-cfg="color" />
+              </label>
+              <div class="seg" title="Alineación entre líneas">
+                <button type="button" class="tbtn" data-alinear="auto" title="Automática según la posición">Auto</button>
+                <button type="button" class="tbtn" data-alinear="izq" title="Izquierda">
+                  <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 5h18v2H3zm0 4h12v2H3zm0 4h18v2H3zm0 4h12v2H3z"/></svg>
+                </button>
+                <button type="button" class="tbtn" data-alinear="centro" title="Centrado">
+                  <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 5h18v2H3zm3 4h12v2H6zm-3 4h18v2H3zm3 4h12v2H6z"/></svg>
+                </button>
+                <button type="button" class="tbtn" data-alinear="der" title="Derecha">
+                  <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M3 5h18v2H3zm6 4h12v2H9zm-6 4h18v2H3zm6 4h12v2H9z"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="grid2">
+              <label class="field">
+                <span class="label">Opacidad <output id="outOpacidad"></output></span>
+                <input type="range" min="10" max="100" step="5" data-cfg="opacidad" />
+              </label>
+              <label class="field">
+                <span class="label">Interlineado</span>
+                <select data-cfg="interlineado" data-num="1">
+                  <option value="1">1,0</option>
+                  <option value="1.15">1,15</option>
+                  <option value="1.5">1,5</option>
+                  <option value="2">2,0</option>
+                </select>
+              </label>
+            </div>
+            <p class="hint" id="notaFuente"></p>
+          </div>
+
+          <!-- ===== Posición ===== -->
+          <div class="tabpanel" data-panel="pos" role="tabpanel" hidden>
+            <div class="pos-wrap">
+              <div class="pos-grid" id="posGrid" role="radiogroup" aria-label="Posición del folio">
+                <button type="button" data-pos="tl" title="Arriba izquierda"></button>
+                <button type="button" data-pos="tc" title="Arriba centro"></button>
+                <button type="button" data-pos="tr" title="Arriba derecha"></button>
+                <button type="button" data-pos="ml" title="Centro izquierda"></button>
+                <button type="button" data-pos="mc" title="Centro"></button>
+                <button type="button" data-pos="mr" title="Centro derecha"></button>
+                <button type="button" data-pos="bl" title="Abajo izquierda"></button>
+                <button type="button" data-pos="bc" title="Abajo centro"></button>
+                <button type="button" data-pos="br" title="Abajo derecha"></button>
+              </div>
+              <div class="pos-side">
+                <div id="camposMargen">
+                  <label class="field inline">
+                    <span class="label">Margen horiz.</span>
+                    <span class="unit"><input type="number" min="0" max="50" step="0.1" data-cfg="margenX" /><i>cm</i></span>
+                  </label>
+                  <label class="field inline">
+                    <span class="label">Margen vert.</span>
+                    <span class="unit"><input type="number" min="0" max="50" step="0.1" data-cfg="margenY" /><i>cm</i></span>
+                  </label>
+                </div>
+                <div id="camposLibre" hidden>
+                  <label class="field inline">
+                    <span class="label">Horizontal</span>
+                    <span class="unit"><input type="number" min="0" max="100" step="0.5" data-cfg="customX" /><i>%</i></span>
+                  </label>
+                  <label class="field inline">
+                    <span class="label">Vertical</span>
+                    <span class="unit"><input type="number" min="0" max="100" step="0.5" data-cfg="customY" /><i>%</i></span>
+                  </label>
+                </div>
+                <button type="button" class="btn small full" data-pos="custom">✥ Posición libre</button>
+              </div>
+            </div>
+            <p class="hint" id="hintPos"></p>
+            <div class="grid2">
+              <label class="field">
+                <span class="label">Rotación del texto</span>
+                <select data-cfg="rotTexto" data-num="1">
+                  <option value="0">0° horizontal</option>
+                  <option value="90">90° vertical ↑</option>
+                  <option value="270">270° vertical ↓</option>
+                  <option value="180">180° invertido</option>
+                </select>
+              </label>
+              <label class="field check">
+                <input type="checkbox" data-cfg="espejo" />
+                <span>Espejo en pares <small>(doble cara)</small></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- ===== Recuadro ===== -->
+          <div class="tabpanel" data-panel="caja" role="tabpanel" hidden>
+            <div class="field">
+              <span class="label">Forma</span>
+              <div class="seg wide">
+                <button type="button" class="tbtn" data-caja="ninguna">Ninguno</button>
+                <button type="button" class="tbtn" data-caja="rect">Rectángulo</button>
+                <button type="button" class="tbtn" data-caja="redondeado">Redondeado</button>
+                <button type="button" class="tbtn" data-caja="elipse">Óvalo</button>
+              </div>
+            </div>
+            <div class="grid3">
+              <label class="field">
+                <span class="label">Borde (pt)</span>
+                <input type="number" min="0.25" max="10" step="0.25" data-cfg="grosor" />
+              </label>
+              <label class="field">
+                <span class="label">Color borde</span>
+                <input type="color" data-cfg="colorBorde" />
+              </label>
+              <label class="field">
+                <span class="label">Espacio (pt)</span>
+                <input type="number" min="0" max="30" step="1" data-cfg="relleno" />
+              </label>
+            </div>
+            <div class="grid2">
+              <label class="field check">
+                <input type="checkbox" data-cfg="fondo" />
+                <span>Fondo de color <small>(tapa lo de debajo)</small></span>
+              </label>
+              <label class="field">
+                <span class="label">Color de fondo</span>
+                <input type="color" data-cfg="colorFondo" />
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- Acción -->
+        <div class="actions">
+          <button id="btnFoliar" class="btn primary big" disabled>Foliar y generar PDF</button>
+          <div class="progress" id="progreso" hidden>
+            <div class="bar"><div class="fill" id="progresoFill"></div></div>
+            <div class="plabel" id="progresoTxt"></div>
+          </div>
+          <div class="result" id="resultado" hidden>
+            <div class="result-info">
+              <span class="ok-dot"></span>
+              <div>
+                <b id="resNombre"></b>
+                <small id="resDetalle"></small>
+              </div>
+            </div>
+            <div class="row">
+              <a class="btn primary" id="btnDescargar" download>⬇ Descargar</a>
+              <a class="btn" id="btnAbrir" target="_blank" rel="noopener">Abrir</a>
+            </div>
+          </div>
+          <button type="button" class="link" id="btnReset">Restablecer ajustes</button>
+        </div>
+      </aside>
+
+      <!-- ============ VISTA PREVIA ============ -->
+      <section class="preview-col">
+        <div class="card preview">
+          <div class="preview-bar" id="barraVista" hidden>
+            <div class="nav">
+              <button type="button" class="icon-btn" id="btnPrev" title="Página anterior (←)">‹</button>
+              <span>Página <input type="number" id="inPagina" min="1" value="1" /> de <b id="totalPaginas">0</b></span>
+              <button type="button" class="icon-btn" id="btnNext" title="Página siguiente (→)">›</button>
+            </div>
+            <span class="badge" id="badgeFolio"></span>
+          </div>
+          <div class="stage" id="stage">
+            <div class="dropzone" id="dropzone" tabindex="0" role="button">
+              <div class="dz-icon">📁</div>
+              <div class="dz-main">Haz clic aquí o arrastra tu PDF o Word</div>
+              <div class="dz-sub">.pdf · .docx — puedes seleccionar varios</div>
+              <div class="dz-foot">Verás aquí la vista previa de cómo quedará cada página</div>
+            </div>
+            <div class="canvas-wrap" id="canvasWrap" hidden>
+              <canvas id="lienzo"></canvas>
+              <div class="marker" id="marcador" hidden></div>
+            </div>
+            <div class="overlay" id="overlay" hidden>
+              <div class="spinner"></div>
+              <div id="overlayTxt">Cargando…</div>
+            </div>
+          </div>
+          <p class="hint center" id="hintVista" hidden>
+            Consejo: haz clic o arrastra sobre la página para colocar el folio donde quieras.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">Procesamiento 100% local · tus archivos no se suben a ningún servidor</footer>
+
+    <input type="file" id="inputArchivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden />
+    <input type="file" id="inputFuente" accept=".ttf,.otf,font/ttf,font/otf" hidden />
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="js/fuentes.js"></script>
+    <script src="js/formato.js"></script>
+    <script src="js/word.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
