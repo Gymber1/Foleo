@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.8" />
+    <link rel="stylesheet" href="css/styles.css?v=2.4.9" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -70,9 +70,19 @@
         <section class="card upload-card">
           <div class="upload-inner">
             <div class="upload-head">
-              <div>
+              <div class="upload-titulo">
                 <h2>Archivos Origen</h2>
                 <p>PDF o Word soportados</p>
+              </div>
+              <div class="segmented modo-varios" id="modoVarios" role="radiogroup" aria-label="Cómo foliar varios documentos" hidden>
+                <label class="seg-opt" title="Unir en un PDF: todos los documentos en un solo PDF con numeración continua">
+                  <input type="radio" name="modoVarios" value="junto" data-cfg="modoVarios" />
+                  <span><svg class="i"><use href="#i-files" /></svg>Unir</span>
+                </label>
+                <label class="seg-opt" title="Por separado: cada documento con su propia numeración y su propio PDF">
+                  <input type="radio" name="modoVarios" value="separado" data-cfg="modoVarios" />
+                  <span><svg class="i"><use href="#i-layers" /></svg>Separado</span>
+                </label>
               </div>
               <button id="btnAgregar" class="btn-primary sm">
                 <svg class="i"><use href="#i-plus" /></svg> Añadir
@@ -90,16 +100,6 @@
                 <small id="resumenDetalle"></small>
               </div>
               <button type="button" class="btn-ghost" id="btnVerDocs">Ver documentos</button>
-            </div>
-            <div class="segmented modo-varios" id="modoVarios" role="radiogroup" aria-label="Cómo foliar varios documentos" hidden>
-              <label class="seg-opt" title="Todos los documentos se unen en un solo PDF con una numeración continua">
-                <input type="radio" name="modoVarios" value="junto" data-cfg="modoVarios" />
-                <span><svg class="i"><use href="#i-files" /></svg>Unir en un PDF</span>
-              </label>
-              <label class="seg-opt" title="Cada documento se folia con su propia numeración y se descarga por separado">
-                <input type="radio" name="modoVarios" value="separado" data-cfg="modoVarios" />
-                <span><svg class="i"><use href="#i-layers" /></svg>Por separado</span>
-              </label>
             </div>
           </div>
         </section>
@@ -600,10 +600,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.4.8"></script>
-    <script src="js/fuentes.js?v=2.4.8"></script>
-    <script src="js/formato.js?v=2.4.8"></script>
-    <script src="js/word.js?v=2.4.8"></script>
-    <script src="js/app.js?v=2.4.8"></script>
+    <script src="js/ttc.js?v=2.4.9"></script>
+    <script src="js/fuentes.js?v=2.4.9"></script>
+    <script src="js/formato.js?v=2.4.9"></script>
+    <script src="js/word.js?v=2.4.9"></script>
+    <script src="js/app.js?v=2.4.9"></script>
   </body>
 </html>

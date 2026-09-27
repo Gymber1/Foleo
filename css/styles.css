@@ -2844,13 +2844,36 @@ body.modal-abierto {
 }
 
 /* ---------- Unir / por separado ---------- */
+.upload-head {
+  gap: 10px;
+}
+.upload-titulo {
+  flex: 1;
+  min-width: 0;
+}
+.upload-titulo h2,
+.upload-titulo p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .modo-varios {
-  margin-top: 10px;
+  flex: none;
+  padding: 3px;
 }
 .modo-varios .seg-opt span {
-  padding: 6px 8px;
-  font-size: 12.5px;
-  gap: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  gap: 5px;
+}
+@media (max-width: 400px) {
+  .upload-head {
+    flex-wrap: wrap;
+  }
+  .modo-varios {
+    order: 3;
+    width: 100%;
+  }
 }
 .modo-varios .seg-opt span .i {
   width: 14px;
