@@ -2842,3 +2842,59 @@ body.modal-abierto {
     flex: 1;
   }
 }
+
+/* ---------- Unir / por separado ---------- */
+.modo-varios {
+  margin-top: 10px;
+}
+.modo-varios .seg-opt span {
+  padding: 6px 8px;
+  font-size: 12.5px;
+  gap: 6px;
+}
+.modo-varios .seg-opt span .i {
+  width: 14px;
+  height: 14px;
+}
+.res-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+.res-lista li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--soft-2-border);
+  background: var(--soft-2-bg);
+  font-size: 12.5px;
+}
+.res-lista .fname {
+  flex: 1;
+}
+.res-lista small {
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+.res-lista a {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--accent-text);
+}
+.res-lista a:hover {
+  background: var(--accent-soft);
+}
+.res-lista a .i {
+  width: 16px;
+  height: 16px;
+}

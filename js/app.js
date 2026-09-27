@@ -43,6 +43,7 @@
     fondo: false,
     colorFondo: "#ffffff",
     relleno: 6,
+    modoVarios: "junto", // "junto" = un solo PDF, "separado" = cada documento con su numeración
   };
 
   let cfg = cargarAjustes();
@@ -52,7 +53,7 @@
   let srcDoc = null; // documento (unido) que se muestra en la vista previa
   let numPaginas = 0;
   let paginaActual = 0;
-  let resultadoUrl = null;
+  let resultadoUrls = [];
   let ocupado = false;
   let zoom = 1;
   const ZOOMS = [0.5, 0.67, 0.75, 0.9, 1, 1.25, 1.5, 2, 2.5, 3];
@@ -107,6 +108,42 @@
     return { mapa, cantidad: n, primero: inicio, ultimo: inicio + n - 1, desde, hasta };
   }
 
+  const porSeparado = () => cfg.modoVarios === "separado" && activos().length > 1;
+  const sinExtension = (nombre) => nombre.replace(/\.(pdf|docx)$/i, "");
+
+  // Plan sobre las páginas de la vista previa (documentos seleccionados, uno tras otro).
+  // Unidos: una sola numeración. Por separado: cada documento cuenta desde el número inicial.
+  function planGlobal() {
+    if (!porSeparado()) {
+      const plan = planFoliado(numPaginas);
+      const nombre = nombreDoc();
+      return {
+        cantidad: plan.cantidad,
+        documentos: 1,
+        planes: [plan],
+        info: (g) => (plan.mapa.has(g) ? { n: plan.mapa.get(g), plan, local: g, nombre, doc: 0 } : null),
+      };
+    }
+    const tramos = [];
+    let inicio = 0;
+    for (const a of activos()) {
+      tramos.push({ inicio, plan: planFoliado(a.paginas), nombre: sinExtension(a.nombre) });
+      inicio += a.paginas;
+    }
+    return {
+      cantidad: tramos.reduce((t, x) => t + x.plan.cantidad, 0),
+      documentos: tramos.length,
+      planes: tramos.map((x) => x.plan),
+      info: (g) => {
+        let k = tramos.length - 1;
+        while (k > 0 && g < tramos[k].inicio) k--;
+        const t = tramos[k];
+        const local = g - t.inicio;
+        return t.plan.mapa.has(local) ? { n: t.plan.mapa.get(local), plan: t.plan, local, nombre: t.nombre, doc: k } : null;
+      },
+    };
+  }
+
   function formatearNumero(n) {
     switch (cfg.estilo) {
       case "romano-may": return Formato.romano(n);
@@ -124,7 +161,7 @@
     return a ? a.nombre.replace(/\.(pdf|docx)$/i, "") : "documento";
   };
 
-  function textoFolio(n, plan, idx) {
+  function textoFolio(n, plan, idx, nombre = nombreDoc()) {
     let letras = Formato.aLetras(n);
     if (cfg.letrasCaso === "may") letras = letras.toUpperCase();
     else if (cfg.letrasCaso === "cap") letras = letras.charAt(0).toUpperCase() + letras.slice(1);
@@ -134,7 +171,7 @@
       total: formatearNumero(Math.max(plan.ultimo, plan.primero)),
       pag: String(idx + 1),
       fecha: hoy(),
-      doc: nombreDoc(),
+      doc: nombre,
     };
     const lineas = String(cfg.plantilla || "")
       .replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m))
@@ -379,10 +416,9 @@
     });
   }
 
-  function foliarPagina(page, fx, plan, idx) {
-    const n = plan.mapa.get(idx);
-    if (n === undefined) return false;
-    dibujarFolio(page, fx, textoFolio(n, plan, idx), (idx + 1) % 2 === 0);
+  function foliarPagina(page, fx, info) {
+    if (!info) return false;
+    dibujarFolio(page, fx, textoFolio(info.n, info.plan, info.local, info.nombre), (info.local + 1) % 2 === 0);
     return true;
   }
 
@@ -674,12 +710,12 @@
       return;
     }
 
-    const plan = planFoliado(numPaginas);
-    const n = plan.mapa.get(paginaActual);
+    const info = planGlobal().info(paginaActual);
     const badge = $("badgeFolio");
-    badge.className = n === undefined ? "badge off" : "badge";
-    badge.textContent = n === undefined ? "Sin folio" : textoFolio(n, plan, paginaActual).join(" ");
-    badge.title = badge.textContent;
+    badge.className = info ? "badge" : "badge off";
+    const texto = info ? textoFolio(info.n, info.plan, info.local, info.nombre).join(" ") : "Sin folio";
+    badge.textContent = porSeparado() && info ? `Doc ${info.doc + 1} · ${texto}` : texto;
+    badge.title = info && porSeparado() ? `${info.nombre}: ${texto}` : texto;
     $("inPagina").value = paginaActual + 1;
     $("inPagina").max = numPaginas;
     $("totalPaginas").textContent = numPaginas;
@@ -691,9 +727,9 @@
       const doc = await PDFDocument.create();
       const [pag] = await doc.copyPages(srcDoc, [paginaActual]);
       doc.addPage(pag);
-      if (n !== undefined) {
+      if (info) {
         const fx = await obtenerFuenteSegura(doc);
-        foliarPagina(pag, fx, plan, paginaActual);
+        foliarPagina(pag, fx, info);
       }
       const bytes = await doc.save();
       if (turno !== turnoVista) return;
@@ -745,10 +781,21 @@
       return;
     }
     let x = num(cfg.customX, 50, 0, 100);
-    if (cfg.espejo && (paginaActual + 1) % 2 === 0) x = 100 - x;
+    if (cfg.espejo && (paginaLocal() + 1) % 2 === 0) x = 100 - x;
     mk.style.left = `${x}%`;
     mk.style.top = `${num(cfg.customY, 50, 0, 100)}%`;
     mk.hidden = false;
+  }
+
+  // Número de página dentro de su propio documento (cuenta para el modo espejo al foliar por separado)
+  function paginaLocal() {
+    if (!porSeparado()) return paginaActual;
+    let g = paginaActual;
+    for (const a of activos()) {
+      if (g < a.paginas) return g;
+      g -= a.paginas;
+    }
+    return paginaActual;
   }
 
   function irA(p) {
@@ -784,7 +831,7 @@
       const r = lienzo.getBoundingClientRect();
       let x = ((ev.clientX - r.left) / r.width) * 100;
       const y = ((ev.clientY - r.top) / r.height) * 100;
-      if (cfg.espejo && (paginaActual + 1) % 2 === 0) x = 100 - x;
+      if (cfg.espejo && (paginaLocal() + 1) % 2 === 0) x = 100 - x;
       cfg.posicion = "custom";
       cfg.customX = Math.round(Math.min(100, Math.max(0, x)) * 10) / 10;
       cfg.customY = Math.round(Math.min(100, Math.max(0, y)) * 10) / 10;
@@ -872,6 +919,74 @@
   // ---------------------------------------------------------------------------
   const pausa = () => new Promise((r) => setTimeout(r, 0));
 
+  // Folia un documento cargado y devuelve el PDF resultante como Blob
+  async function foliarDocumento(doc, plan, nombre, avance) {
+    const fx = await obtenerFuenteSegura(doc);
+    const paginas = doc.getPages();
+    let hechas = 0;
+    for (const [idx, n] of plan.mapa) {
+      foliarPagina(paginas[idx], fx, { n, plan, local: idx, nombre });
+      hechas++;
+      if (hechas % 20 === 0 || hechas === plan.cantidad) {
+        avance(hechas);
+        await pausa();
+      }
+    }
+    return new Blob([await doc.save()], { type: "application/pdf" });
+  }
+
+  let jszip = null;
+  function cargarJSZip() {
+    if (window.JSZip) return Promise.resolve();
+    if (!jszip) {
+      jszip = new Promise((ok, mal) => {
+        const sc = document.createElement("script");
+        sc.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        sc.onload = ok;
+        sc.onerror = () => {
+          jszip = null;
+          mal(new Error("No se pudo cargar el compresor ZIP"));
+        };
+        document.head.append(sc);
+      });
+    }
+    return jszip;
+  }
+
+  function mostrarResultado({ titulo, detalle, url, nombre, abrir, lista }) {
+    $("btnDescargar").href = url;
+    $("btnDescargar").download = nombre;
+    $("btnDescargar").lastChild.textContent = lista ? " Descargar todos (ZIP)" : " Descargar";
+    $("btnAbrir").hidden = !abrir;
+    if (abrir) $("btnAbrir").href = abrir;
+    $("resNombre").textContent = titulo;
+    $("resDetalle").textContent = detalle;
+    const ul = $("resLista");
+    ul.innerHTML = "";
+    ul.hidden = !lista;
+    for (const r of lista || []) {
+      const li = document.createElement("li");
+      const nom = document.createElement("span");
+      nom.className = "fname";
+      nom.textContent = r.nombre;
+      nom.title = r.nombre;
+      const info = document.createElement("small");
+      info.textContent = `${r.cantidad} pág. · ${tamanoLegible(r.blob.size)}`;
+      const a = document.createElement("a");
+      a.href = r.url;
+      a.download = r.nombre;
+      a.title = `Descargar ${r.nombre}`;
+      a.setAttribute("aria-label", `Descargar ${r.nombre}`);
+      a.append(icono("download"));
+      li.append(nom, info, a);
+      ul.append(li);
+    }
+    progreso(100, "¡Listo!");
+    $("resultado").hidden = false;
+    $("resultado").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    setTimeout(() => ($("progreso").hidden = true), 600);
+  }
+
   async function foliar() {
     if (!archivos.length || ocupado) return;
     ocupado = true;
@@ -882,39 +997,70 @@
     progreso(0, "Preparando…");
     try {
       const lista = activos();
+      if (porSeparado()) {
+        // Cada documento con su propia numeración, un PDF por documento
+        const planes = lista.map((a) => planFoliado(a.paginas));
+        const total = planes.reduce((t, x) => t + x.cantidad, 0);
+        if (!total) throw new Error("Con estos ajustes no hay ninguna página para foliar.");
+        const resultados = [];
+        let previas = 0;
+        for (let k = 0; k < lista.length; k++) {
+          const a = lista[k];
+          const nombre = sinExtension(a.nombre);
+          const { doc } = await cargarPdf(a.bytes);
+          const blob = planes[k].cantidad
+            ? await foliarDocumento(doc, planes[k], nombre, (h) =>
+                progreso(((previas + h) / total) * 88, `Documento ${k + 1} de ${lista.length}: página ${h} de ${planes[k].cantidad}`)
+              )
+            : new Blob([await doc.save()], { type: "application/pdf" });
+          previas += planes[k].cantidad;
+          const url = URL.createObjectURL(blob);
+          resultadoUrls.push(url);
+          resultados.push({ nombre: `${nombre}_foliado.pdf`, blob, url, cantidad: planes[k].cantidad });
+        }
+        progreso(92, "Creando ZIP…");
+        await cargarJSZip();
+        const zip = new JSZip();
+        const usados = new Set();
+        for (const r of resultados) {
+          let n = r.nombre;
+          for (let c = 2; usados.has(n); c++) n = r.nombre.replace(/_foliado\.pdf$/, `_${c}_foliado.pdf`);
+          usados.add(n);
+          zip.file(n, r.blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const zipUrl = URL.createObjectURL(zipBlob);
+        resultadoUrls.push(zipUrl);
+        mostrarResultado({
+          titulo: `${resultados.length} PDF foliados por separado`,
+          detalle: `${total} páginas foliadas · ZIP de ${tamanoLegible(zipBlob.size)}`,
+          url: zipUrl,
+          nombre: "documentos_foliados.zip",
+          abrir: null,
+          lista: resultados,
+        });
+        return;
+      }
+
       const doc = lista.length === 1 ? (await cargarPdf(lista[0].bytes)).doc : await unirDocumentos(lista);
       const total = doc.getPageCount();
       const plan = planFoliado(total);
       if (!plan.cantidad) throw new Error("Con estos ajustes no hay ninguna página para foliar.");
-      const fx = await obtenerFuenteSegura(doc);
-      const paginas = doc.getPages();
-      let hechas = 0;
-      for (const idx of plan.mapa.keys()) {
-        foliarPagina(paginas[idx], fx, plan, idx);
-        hechas++;
-        if (hechas % 20 === 0 || hechas === plan.cantidad) {
-          progreso((hechas / plan.cantidad) * 90, `Foliando página ${hechas} de ${plan.cantidad}`);
-          await pausa();
-        }
-      }
-      progreso(94, "Guardando PDF…");
-      await pausa();
-      const bytes = await doc.save();
-      const blob = new Blob([bytes], { type: "application/pdf" });
-      resultadoUrl = URL.createObjectURL(blob);
-
+      const blob = await foliarDocumento(doc, plan, nombreDoc(), (h) =>
+        progreso((h / plan.cantidad) * 90, `Foliando página ${h} de ${plan.cantidad}`)
+      );
+      const url = URL.createObjectURL(blob);
+      resultadoUrls.push(url);
       const nombre = `${nombreDoc()}${lista.length > 1 ? "_unido" : ""}_foliado.pdf`;
-      $("btnDescargar").href = resultadoUrl;
-      $("btnDescargar").download = nombre;
-      $("btnAbrir").href = resultadoUrl;
-      $("resNombre").textContent = nombre;
       const [a, b] = cfg.orden === "inverso" ? [plan.ultimo, plan.primero] : [plan.primero, plan.ultimo];
-      $("resDetalle").textContent =
-        `${plan.cantidad} de ${total} páginas foliadas (${formatearNumero(a)} → ${formatearNumero(b)}) · ${tamanoLegible(blob.size)}`;
-      progreso(100, "¡Listo!");
-      $("resultado").hidden = false;
-      $("resultado").scrollIntoView({ block: "nearest", behavior: "smooth" });
-      setTimeout(() => ($("progreso").hidden = true), 600);
+      mostrarResultado({
+        titulo: nombre,
+        detalle: `${plan.cantidad} de ${total} páginas foliadas (${formatearNumero(a)} → ${formatearNumero(b)}) · ${tamanoLegible(blob.size)}`,
+        url,
+        nombre,
+        abrir: url,
+        lista: null,
+      });
     } catch (e) {
       console.error(e);
       $("progreso").hidden = true;
@@ -932,10 +1078,8 @@
 
   function ocultarResultado() {
     $("resultado").hidden = true;
-    if (resultadoUrl) {
-      URL.revokeObjectURL(resultadoUrl);
-      resultadoUrl = null;
-    }
+    resultadoUrls.forEach((u) => URL.revokeObjectURL(u));
+    resultadoUrls = [];
   }
 
   const tamanoLegible = (b) =>
@@ -971,10 +1115,15 @@
   }
 
   function actualizarBoton() {
-    const plan = numPaginas ? planFoliado(numPaginas) : null;
+    const plan = numPaginas ? planGlobal() : null;
     $("btnFoliar").disabled = !archivos.length || ocupado || (plan && !plan.cantidad);
-    $("btnFoliarTxt").textContent =
-      plan && plan.cantidad ? `Foliar ${plan.cantidad} ${plan.cantidad === 1 ? "Página" : "Páginas"}` : "Foliar Documentos";
+    let txt = "Foliar Documentos";
+    if (plan && plan.cantidad) {
+      txt = porSeparado()
+        ? `Foliar ${plan.documentos} Documentos`
+        : `Foliar ${plan.cantidad} ${plan.cantidad === 1 ? "Página" : "Páginas"}`;
+    }
+    $("btnFoliarTxt").textContent = txt;
   }
 
   function actualizarUI(soloPosicion = false) {
@@ -1028,9 +1177,17 @@
     // Resumen del plan
     const total = numPaginas || 0;
     const res = $("resumenPlan");
-    $("inDesde").max = total || "";
-    $("inHasta").max = total || "";
-    if (!total) {
+    $("inDesde").max = total && !porSeparado() ? total : "";
+    $("inHasta").max = total && !porSeparado() ? total : "";
+    $("modoVarios").hidden = activos().length < 2;
+    if (total && porSeparado()) {
+      const pg = planGlobal();
+      res.className = pg.cantidad ? "plan" : "plan warn";
+      res.textContent = pg.cantidad
+        ? `Por separado: se foliarán ${pg.cantidad} páginas en ${pg.documentos} documentos. Cada documento lleva su propia numeración ` +
+          `y los ajustes de páginas (desde, hasta, excluir) se aplican a cada uno.`
+        : "Con estos ajustes no se foliará ninguna página.";
+    } else if (!total) {
       res.className = "plan";
       res.textContent = "";
     } else {
@@ -1048,7 +1205,7 @@
     }
 
     // Vista previa de la fuente
-    const planEj = total ? planFoliado(total) : { primero: 1, ultimo: 20 };
+    const planEj = total ? planGlobal().planes[0] : { primero: 1, ultimo: 20 };
     const ej = $("ejemplo");
     ej.textContent = textoFolio(Math.round(num(cfg.inicio, 1, 0)), planEj, 0).join("\n") || "—";
     Object.assign(ej.style, {
