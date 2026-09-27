@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.3" />
+    <link rel="stylesheet" href="css/styles.css?v=2.4.4" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -58,34 +58,13 @@
 
     <div class="bg-glow" aria-hidden="true"><span></span><span></span></div>
 
-    <!-- ================= Cabecera ================= -->
-    <header class="header">
-      <div class="brand">
-        <div class="brand-logo">F</div>
-        <div>
-          <h1>Foleo <span>Pro</span></h1>
-          <p>Advanced Document Numbering</p>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="local">
-          <span class="ping"><span></span><span></span></span>
-          Procesamiento Local
-        </div>
-        <div class="vsep"></div>
-        <button id="btnTema" class="theme-btn" aria-label="Cambiar tema" title="Cambiar tema claro/oscuro">
-          <svg class="i ic-sun"><use href="#i-sun" /></svg>
-          <svg class="i ic-moon"><use href="#i-moon" /></svg>
-        </button>
-      </div>
-    </header>
+    <h1 class="sr-only">Foleo Pro · Foliar PDF</h1>
 
     <main class="workspace">
       <!-- ================= Panel izquierdo ================= -->
       <aside class="aside">
         <!-- Archivos -->
         <section class="card upload-card">
-          <svg class="i deco-monitor" aria-hidden="true"><use href="#i-monitor" /></svg>
           <div class="upload-inner">
             <div class="upload-head">
               <div>
@@ -486,7 +465,13 @@
             <button type="button" class="reset-btn" id="btnReset">
               <svg class="i"><use href="#i-refresh" /></svg> Valores por defecto
             </button>
-            <span class="version">v2.4.3</span>
+            <span class="foot-right">
+              <span class="local" title="Tus archivos se procesan en tu equipo; nada se sube a internet">
+                <span class="ping"><span></span><span></span></span>
+                Procesamiento Local
+              </span>
+              <span class="version">v2.4.4</span>
+            </span>
           </div>
         </section>
       </aside>
@@ -553,15 +538,19 @@
 
     <input type="file" id="inputArchivo" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden />
     <input type="file" id="inputFuente" accept=".ttf,.otf,.ttc,font/ttf,font/otf,font/collection" hidden />
+    <button id="btnTema" class="theme-btn theme-fab" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema claro/oscuro">
+      <svg class="i ic-sun"><use href="#i-sun" /></svg>
+      <svg class="i ic-moon"><use href="#i-moon" /></svg>
+    </button>
     <div class="toasts" id="toasts" aria-live="polite"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.4.3"></script>
-    <script src="js/fuentes.js?v=2.4.3"></script>
-    <script src="js/formato.js?v=2.4.3"></script>
-    <script src="js/word.js?v=2.4.3"></script>
-    <script src="js/app.js?v=2.4.3"></script>
+    <script src="js/ttc.js?v=2.4.4"></script>
+    <script src="js/fuentes.js?v=2.4.4"></script>
+    <script src="js/formato.js?v=2.4.4"></script>
+    <script src="js/word.js?v=2.4.4"></script>
+    <script src="js/app.js?v=2.4.4"></script>
   </body>
 </html>
