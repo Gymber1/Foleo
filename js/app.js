@@ -113,41 +113,50 @@
   const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
   const paginasDe = (grupo) => grupo.reduce((t, a) => t + a.paginas, 0);
 
-  // Modo efectivo con varios documentos: "junto" (un PDF), "grupos" (cortes elegidos) o "separado" (uno por documento)
-  const modo = () => (activos().length > 1 ? cfg.modoVarios || "junto" : "junto");
+  // Modo efectivo con varios documentos: "junto" (un PDF), "grupos" (grupos armados por el usuario)
+  // o "separado" (uno por documento)
+  let numGrupos = 2; // cantidad de grupos en el modo «Grupos»
+  let grupoVista = 1; // grupo abierto en la ventana «Ver documentos»
+  const modo = () => {
+    if (archivos.length > 1 && cfg.modoVarios === "grupos") return "grupos";
+    return activos().length > 1 ? cfg.modoVarios || "junto" : "junto";
+  };
   const porSeparado = () => modo() !== "junto"; // hay más de una numeración
+  const enGrupo = (a) => a.grupo >= 1 && a.grupo <= numGrupos;
+  const sinGrupo = () => archivos.filter((a) => !enGrupo(a));
 
-  // Documentos seleccionados repartidos en grupos; cada grupo tiene su propia numeración y su propio PDF.
-  // En «grupos», un documento marcado con «corte» empieza un grupo nuevo (aunque el corte esté en uno desmarcado).
+  // Documentos repartidos en grupos; cada grupo tiene su propia numeración y su propio PDF.
+  // En «grupos» cada documento pertenece al grupo que eligió el usuario (los grupos vacíos se omiten).
   function grupos() {
-    const lista = activos();
     const m = modo();
+    if (m === "grupos") {
+      const res = [];
+      for (let k = 1; k <= numGrupos; k++) {
+        const g = archivos.filter((a) => a.grupo === k);
+        if (g.length) {
+          g.id = k;
+          res.push(g);
+        }
+      }
+      return res;
+    }
+    const lista = activos();
     if (!lista.length) return [];
     if (m === "separado") return lista.map((a) => [a]);
-    if (m === "junto") return [lista];
-    const res = [];
-    let corte = false;
-    for (const a of archivos) {
-      corte = corte || !!a.corte;
-      if (!a.activo) continue;
-      if (!res.length || corte) res.push([]);
-      res[res.length - 1].push(a);
-      corte = false;
-    }
-    return res;
+    return [lista];
   }
+
+  // Documentos en el orden en que se muestran en la vista previa (agrupados si hay grupos)
+  const ordenVista = () => (porSeparado() ? grupos().flat() : activos());
 
   // Nombre que se usa para {doc} y para el archivo de salida de un grupo
   const nombreGrupo = (grupo) => (grupo.length ? sinExtension(grupo[0].nombre) : "documento");
 
-  // "docs 1–5 y 6–10" según la posición de cada documento en la lista
+  // "Grupo 1 (5 documentos), Grupo 2 (5 documentos)"
   function describirGrupos() {
-    const partes = grupos().map((g) => {
-      const a = archivos.indexOf(g[0]) + 1;
-      const b = archivos.indexOf(g[g.length - 1]) + 1;
-      return a === b ? `doc. ${a}` : `docs. ${a}–${b}`;
-    });
-    return partes.length > 1 ? `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}` : partes[0] || "";
+    return grupos()
+      .map((g) => `Grupo ${g.id || 1} (${plural(g.length, "documento", "documentos")})`)
+      .join(", ");
   }
 
   // Plan sobre las páginas de la vista previa (documentos seleccionados, uno tras otro):
@@ -156,11 +165,11 @@
     const unidos = !porSeparado();
     const tramos = [];
     let inicio = 0;
-    for (const g of grupos()) {
+    grupos().forEach((g, k) => {
       const pags = unidos ? numPaginas : paginasDe(g);
-      tramos.push({ inicio, plan: planFoliado(pags), nombre: unidos ? nombreDoc() : nombreGrupo(g) });
+      tramos.push({ inicio, plan: planFoliado(pags), nombre: unidos ? nombreDoc() : nombreGrupo(g), id: g.id || k + 1 });
       inicio += pags;
-    }
+    });
     if (!tramos.length) tramos.push({ inicio: 0, plan: planFoliado(numPaginas), nombre: nombreDoc() });
     return {
       cantidad: tramos.reduce((t, x) => t + x.plan.cantidad, 0),
@@ -171,7 +180,9 @@
         while (k > 0 && g < tramos[k].inicio) k--;
         const t = tramos[k];
         const local = g - t.inicio;
-        return t.plan.mapa.has(local) ? { n: t.plan.mapa.get(local), plan: t.plan, local, nombre: t.nombre, doc: k } : null;
+        return t.plan.mapa.has(local)
+          ? { n: t.plan.mapa.get(local), plan: t.plan, local, nombre: t.nombre, doc: k, grupo: t.id }
+          : null;
       },
     };
   }
@@ -498,7 +509,7 @@
         }
         const { doc, cifrado } = await cargarPdf(bytes);
         if (cifrado) aviso(`"${f.name}" está protegido; el PDF foliado podría no abrirse correctamente.`, "warn", 8000);
-        archivos.push({ nombre: f.name, tipo, bytes, doc, paginas: doc.getPageCount(), activo: true });
+        archivos.push({ nombre: f.name, tipo, bytes, doc, paginas: doc.getPageCount(), activo: true, grupo: modo() === "grupos" ? grupoVista : 1 });
       } catch (e) {
         console.error(e);
         aviso(`No se pudo leer "${f.name}": ${e.message || e}`, "err", 8000);
@@ -519,7 +530,7 @@
 
   async function reconstruir() {
     ocultarResultado();
-    const lista = activos();
+    const lista = ordenVista();
     if (!lista.length) {
       srcDoc = null;
       numPaginas = 0;
@@ -551,7 +562,9 @@
   // Fila de un documento. En el modal lleva asa para arrastrar, casilla, número de orden y flechas.
   function filaDocumento(a, i, enModal) {
     const li = document.createElement("li");
-    li.classList.toggle("inactivo", !a.activo);
+    const enGrupos = enModal && modo() === "grupos";
+    li.classList.toggle("inactivo", enGrupos ? !enGrupo(a) : !a.activo);
+    li.classList.toggle("en-grupo", enGrupos && a.grupo === grupoVista);
     if (enModal) {
       li.draggable = true;
       li.dataset.idx = i;
@@ -562,10 +575,15 @@
       const chk = document.createElement("input");
       chk.type = "checkbox";
       chk.className = "doc-check";
-      chk.checked = a.activo;
-      chk.title = "Incluir en el foliado";
-      chk.setAttribute("aria-label", `Incluir ${a.nombre}`);
+      chk.checked = enGrupos ? a.grupo === grupoVista : a.activo;
+      chk.title = enGrupos ? `Incluir en el Grupo ${grupoVista}` : "Incluir en el foliado";
+      chk.setAttribute("aria-label", `${chk.title}: ${a.nombre}`);
       chk.addEventListener("change", () => {
+        if (enGrupos) {
+          a.grupo = chk.checked ? grupoVista : 0;
+          reconstruir();
+          return;
+        }
         if (!chk.checked && activos().length === 1) {
           chk.checked = true;
           aviso("Debe quedar al menos un documento seleccionado.", "warn");
@@ -589,7 +607,14 @@
     const meta = document.createElement("span");
     meta.className = "fmeta";
     meta.textContent = `${a.paginas} pág.`;
-    li.append(tag, nombre, meta);
+    li.append(tag, nombre);
+    if (enGrupos && a.grupo !== grupoVista) {
+      const chip = document.createElement("span");
+      chip.className = "gchip" + (enGrupo(a) ? "" : " libre");
+      chip.textContent = enGrupo(a) ? `En Grupo ${a.grupo}` : "Sin grupo";
+      li.append(chip);
+    }
+    li.append(meta);
     const botones = enModal
       ? [
           ["arrow-up", "Subir", i === 0, () => mover(i, -1)],
@@ -623,8 +648,10 @@
     $("resumenDocs").hidden = !varios;
     if (varios) {
       $("resumenTitulo").textContent = plural(archivos.length, "documento", "documentos");
-      $("resumenDetalle").textContent =
-        lista.length === archivos.length
+      const gs = grupos();
+      $("resumenDetalle").textContent = modo() === "grupos"
+        ? `${plural(gs.length, "grupo", "grupos")} · ${plural(paginasDe(gs.flat()), "página", "páginas")}`
+        : lista.length === archivos.length
           ? `${plural(paginasSel, "página", "páginas")} en total`
           : `${lista.length} de ${archivos.length} seleccionados · ${plural(paginasSel, "página", "páginas")}`;
     }
@@ -634,68 +661,77 @@
     const ulm = $("listaModal");
     ulm.innerHTML = "";
     const enGrupos = modo() === "grupos";
-    const grupoDe = enGrupos ? indiceGrupos() : null;
-    archivos.forEach((a, i) => {
-      if (enGrupos && i === 0) ulm.append(tituloGrupo(1));
-      if (enGrupos && i > 0) ulm.append(separadorGrupo(a, grupoDe.get(a)));
-      ulm.append(filaDocumento(a, i, true));
-    });
-    $("herrGrupos").hidden = !enGrupos;
+    archivos.forEach((a, i) => ulm.append(filaDocumento(a, i, true)));
+    $("barraGrupos").hidden = !enGrupos;
+    if (enGrupos) pintarBarraGrupos();
+    $("modalDesc").textContent = enGrupos
+      ? "Entra a cada grupo y marca sus documentos. Cada grupo se folia con su propia numeración y sale como un PDF."
+      : "Arrastra o usa las flechas para cambiar el orden. Desmarca los que no quieras foliar.";
     $("modalTitulo").textContent = `Documentos (${archivos.length})`;
-    $("modalTotal").textContent = `${lista.length} de ${archivos.length} seleccionados · ${plural(paginasSel, "página", "páginas")}`;
+    if (enGrupos) {
+      const asignados = archivos.filter(enGrupo);
+      $("modalTotal").textContent =
+        `${asignados.length} de ${archivos.length} en grupos · ${plural(paginasDe(asignados), "página", "páginas")}`;
+    } else {
+      $("modalTotal").textContent = `${lista.length} de ${archivos.length} seleccionados · ${plural(paginasSel, "página", "páginas")}`;
+    }
     if (!varios && !$("modalDocs").hidden) cerrarModal();
   }
 
-  // Número de grupo (1, 2, …) de cada documento seleccionado
-  function indiceGrupos() {
-    const mapa = new Map();
-    grupos().forEach((g, k) => g.forEach((a) => mapa.set(a, k + 1)));
-    return mapa;
-  }
-
-  function tituloGrupo(n) {
-    const li = document.createElement("li");
-    li.className = "grupo-tit";
-    li.textContent = `Grupo ${n}`;
-    return li;
-  }
-
-  // Separador entre documentos: marca o quita el inicio de un grupo nuevo
-  function separadorGrupo(a, grupo) {
-    const li = document.createElement("li");
-    li.className = "corte-li" + (a.corte ? " activo" : "");
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "corte-btn";
-    b.append(icono(a.corte ? "x" : "scissors"));
-    const t = document.createElement("span");
-    if (a.corte) {
-      t.textContent = grupo ? `Grupo ${grupo} empieza aquí` : "Nuevo grupo desde aquí";
-      b.title = "Quitar este corte (unir con el grupo anterior)";
-    } else {
-      t.textContent = "Reiniciar numeración aquí";
-      b.title = "Empezar un grupo nuevo desde el documento de abajo";
+  // Barra de grupos del modal: cantidad, pestañas y ayuda del grupo abierto
+  function pintarBarraGrupos() {
+    grupoVista = Math.min(Math.max(1, grupoVista), numGrupos);
+    $("numGrupos").textContent = numGrupos;
+    $("btnMenosGrupo").disabled = numGrupos <= 1;
+    $("btnMasGrupo").disabled = numGrupos >= 30;
+    const tabs = $("gtabs");
+    tabs.innerHTML = "";
+    for (let k = 1; k <= numGrupos; k++) {
+      const docs = archivos.filter((a) => a.grupo === k);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "tab");
+      b.setAttribute("aria-selected", String(k === grupoVista));
+      b.className = "gtab" + (k === grupoVista ? " on" : "") + (docs.length ? "" : " vacio");
+      b.title = docs.length ? `${plural(docs.length, "documento", "documentos")} · ${paginasDe(docs)} pág.` : "Grupo vacío";
+      const t = document.createElement("span");
+      t.textContent = `Grupo ${k}`;
+      const c = document.createElement("small");
+      c.textContent = docs.length;
+      b.append(t, c);
+      b.addEventListener("click", () => {
+        grupoVista = k;
+        pintarArchivos();
+      });
+      tabs.append(b);
     }
-    b.append(t);
-    b.addEventListener("click", () => {
-      a.corte = !a.corte;
-      reconstruir();
-    });
-    li.append(b);
-    return li;
+    const libres = sinGrupo().length;
+    const actual = archivos.filter((a) => a.grupo === grupoVista);
+    $("hintGrupo").textContent =
+      `Marca los documentos del Grupo ${grupoVista}` +
+      (actual.length ? ` (${plural(actual.length, "documento", "documentos")}, ${paginasDe(actual)} pág.).` : ".") +
+      (libres ? ` ${plural(libres, "documento sin grupo", "documentos sin grupo")}: no se foliarán.` : "");
+    $("hintGrupo").classList.toggle("warn", libres > 0);
   }
 
-  // Corta cada N documentos seleccionados (p. ej. 10 documentos con N = 5 → 1–5 y 6–10)
-  function agruparCada(n) {
-    if (!Number.isFinite(n) || n < 1) {
-      aviso("Escribe cuántos documentos va a tener cada grupo.", "warn");
-      return;
-    }
-    archivos.forEach((a) => (a.corte = false));
-    activos().forEach((a, k) => (a.corte = k > 0 && k % n === 0));
+  function cambiarNumGrupos(n) {
+    n = Math.max(1, Math.min(30, n));
+    if (n === numGrupos) return;
+    const quedan = archivos.filter((a) => a.grupo > n);
+    quedan.forEach((a) => (a.grupo = 0));
+    numGrupos = n;
+    if (grupoVista > n) grupoVista = n;
+    if (quedan.length) aviso(`${plural(quedan.length, "documento quedó", "documentos quedaron")} sin grupo.`, "warn");
     reconstruir();
   }
 
+  // Reparte todos los documentos, en orden y por partes iguales, entre los grupos
+  function repartirEnOrden() {
+    const n = archivos.length;
+    archivos.forEach((a, i) => (a.grupo = Math.floor((i * numGrupos) / n) + 1));
+    aviso(`Documentos repartidos: ${describirGrupos()}.`, "ok");
+    reconstruir();
+  }
 
   function mover(i, d) {
     moverA(i, i + d);
@@ -735,17 +771,15 @@
     $("btnCerrarModal").addEventListener("click", cerrarModal);
     $("btnModalListo").addEventListener("click", cerrarModal);
     $("btnModalAgregar").addEventListener("click", () => $("inputArchivo").click());
-    $("btnAgruparCada").addEventListener("click", () => agruparCada(parseInt($("inAgruparCada").value, 10)));
-    $("btnSinGrupos").addEventListener("click", () => {
-      archivos.forEach((a) => (a.corte = false));
-      reconstruir();
-    });
-    // Al elegir «Grupos» sin cortes, se abre la ventana para marcarlos
+    $("btnMasGrupo").addEventListener("click", () => cambiarNumGrupos(numGrupos + 1));
+    $("btnMenosGrupo").addEventListener("click", () => cambiarNumGrupos(numGrupos - 1));
+    $("btnRepartir").addEventListener("click", repartirEnOrden);
+    // Al elegir «Grupos» se abre la ventana para armarlos
     document.querySelectorAll('input[data-cfg="modoVarios"]').forEach((r) =>
       r.addEventListener("change", () => {
-        if (r.checked && r.value === "grupos" && !archivos.some((a) => a.corte)) {
-          if ($("modalDocs").hidden) abrirModal();
-          aviso("Marca dónde empieza cada grupo o usa «Agrupar cada N documentos».", "info", 7000);
+        if (r.checked && r.value === "grupos" && $("modalDocs").hidden) {
+          abrirModal();
+          aviso("Elige cuántos grupos quieres y marca los documentos de cada uno.", "info", 7000);
         }
         if (!$("modalDocs").hidden) pintarArchivos();
       })
@@ -821,8 +855,8 @@
     const badge = $("badgeFolio");
     badge.className = info ? "badge" : "badge off";
     const texto = info ? textoFolio(info.n, info.plan, info.local, info.nombre).join(" ") : "Sin folio";
-    const etiqueta = modo() === "grupos" ? "Grupo" : "Doc";
-    badge.textContent = porSeparado() && info ? `${etiqueta} ${info.doc + 1} · ${texto}` : texto;
+    const etiqueta = modo() === "grupos" ? `Grupo ${info && info.grupo}` : `Doc ${info && info.doc + 1}`;
+    badge.textContent = porSeparado() && info ? `${etiqueta} · ${texto}` : texto;
     badge.title = info && porSeparado() ? `${info.nombre}: ${texto}` : texto;
     const rv = rangoVista();
     $("inPagina").value = paginaActual - rv.ini + 1;
@@ -910,7 +944,7 @@
 
   // Páginas que se recorren en la vista previa: todas o solo las del documento elegido
   function rangoVista() {
-    const lista = activos();
+    const lista = ordenVista();
     if (docVista < 0 || docVista >= lista.length) return { ini: 0, fin: numPaginas };
     let ini = 0;
     for (let k = 0; k < docVista; k++) ini += lista[k].paginas;
@@ -918,7 +952,7 @@
   }
 
   function pintarSelectorDoc() {
-    const lista = activos();
+    const lista = ordenVista();
     const sel = $("selDoc");
     $("selDocWrap").hidden = lista.length < 2;
     sel.innerHTML = "";
@@ -927,6 +961,7 @@
     lista.forEach((a, k) => sel.append(new Option(`${k + 1}. ${a.nombre}`, String(k))));
     sel.value = String(docVista);
     sel.title = docVista < 0 ? "Viendo todos los documentos" : `Viendo solo: ${lista[docVista].nombre}`;
+    Selects.refrescar();
   }
 
   function irA(p) {
@@ -1142,7 +1177,7 @@
           const g = gs[k];
           const nombre = nombreGrupo(g);
           const doc = g.length === 1 ? (await cargarPdf(g[0].bytes)).doc : await unirDocumentos(g);
-          const que = enGrupos ? `Grupo ${k + 1} de ${gs.length}` : `Documento ${k + 1} de ${gs.length}`;
+          const que = enGrupos ? `Grupo ${g.id} (${k + 1} de ${gs.length})` : `Documento ${k + 1} de ${gs.length}`;
           const blob = planes[k].cantidad
             ? await foliarDocumento(doc, planes[k], nombre, (h) =>
                 progreso(((previas + h) / total) * 88, `${que}: página ${h} de ${planes[k].cantidad}`)
@@ -1151,7 +1186,7 @@
           previas += planes[k].cantidad;
           const url = URL.createObjectURL(blob);
           resultadoUrls.push(url);
-          const archivo = enGrupos ? `grupo${k + 1}_${nombre}_foliado.pdf` : `${nombre}_foliado.pdf`;
+          const archivo = enGrupos ? `grupo${g.id}_${nombre}_foliado.pdf` : `${nombre}_foliado.pdf`;
           resultados.push({ nombre: archivo, blob, url, cantidad: planes[k].cantidad });
         }
         progreso(92, "Creando ZIP…");
@@ -1315,7 +1350,7 @@
     const res = $("resumenPlan");
     $("inDesde").max = total && !porSeparado() ? total : "";
     $("inHasta").max = total && !porSeparado() ? total : "";
-    const varios = activos().length > 1;
+    const varios = activos().length > 1 || (archivos.length > 1 && cfg.modoVarios === "grupos");
     $("modoVarios").hidden = !varios;
     document.querySelector(".upload-card").classList.toggle("varios", varios);
     if (total && porSeparado()) {
@@ -1324,8 +1359,11 @@
       if (!pg.cantidad) res.textContent = "Con estos ajustes no se foliará ninguna página.";
       else if (modo() === "grupos")
         res.textContent =
-          `Por grupos: ${plural(pg.documentos, "grupo", "grupos")} (${describirGrupos()}). Cada grupo empieza su propia numeración ` +
-          `y se descarga como un PDF. Los ajustes de páginas se aplican a cada grupo.`;
+          `Por grupos: ${describirGrupos()}. Cada grupo empieza su propia numeración y se descarga como un PDF. ` +
+          `Los ajustes de páginas se aplican a cada grupo.` +
+          (sinGrupo().length
+            ? ` ${plural(sinGrupo().length, "documento está sin grupo y no se foliará", "documentos están sin grupo y no se foliarán")}.`
+            : "");
       else
         res.textContent =
           `Por separado: se foliarán ${pg.cantidad} páginas en ${pg.documentos} documentos. Cada documento lleva su propia numeración ` +
@@ -1360,6 +1398,7 @@
 
     pintarFolioSimulado();
     actualizarBoton();
+    Selects.refrescar();
   }
 
   function enlazarControles() {
@@ -1764,6 +1803,7 @@
   }
 
   // ---------------------------------------------------------------------------
+  Selects.iniciar({ flotar });
   enlazarControles();
   configurarSelectorFuentes();
   configurarArchivos();

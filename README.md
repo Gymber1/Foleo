@@ -36,8 +36,8 @@ Los archivos se procesan en tu equipo y no se suben a ningún servidor.
 **Archivos**
 - PDF y Word (.docx). Con varios archivos eliges:
   - **Unir:** un solo PDF con numeración continua.
-  - **Grupos:** la numeración se reinicia donde tú indiques (p. ej. documentos 1–5 y 6–10), con un PDF por grupo.
-    Puedes marcar los cortes a mano o usar «Agrupar cada N documentos».
+  - **Grupos:** eliges cuántos grupos quieres y qué documentos van en cada uno (p. ej. 1–5 y 6–10);
+    cada grupo tiene su propia numeración y sale como un PDF. «Repartir en orden» los divide por partes iguales.
   - **Separado:** cada documento con su propia numeración.
   Con varios PDF de salida se descargan sueltos o todos en un ZIP.
 - Con varios documentos, el botón «Ver documentos» abre una ventana para ordenarlos (arrastrando o con flechas) y elegir cuáles incluir.

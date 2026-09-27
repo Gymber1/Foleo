@@ -2971,83 +2971,240 @@ body.modal-abierto {
 .modal-modo .seg-opt span {
   padding: 6px 8px;
 }
-.herr-grupos {
+.barra-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 20px 0;
+}
+.bg-fila {
   display: flex;
   align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
+}
+.bg-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.contador {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--zoom-border);
+  background: var(--zoom-bg);
+}
+.contador b {
+  min-width: 28px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--heading);
+}
+.bg-fila .btn-ghost {
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: 12.5px;
+}
+.gtabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+.gtab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-  padding: 12px 20px 0;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--soft-2-border);
+  background: var(--soft-2-bg);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.gtab small {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.gtab.vacio small {
+  background: var(--seg-bg);
+  color: var(--muted-2);
+}
+.gtab:hover {
+  color: var(--text);
+  background: var(--soft-2-hover);
+}
+.gtab.on {
+  border-color: #6366f1;
+  background: #6366f1;
+  color: #fff;
+}
+.gtab.on small {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.hint-grupo {
   font-size: 12.5px;
   color: var(--muted);
 }
-.herr-grupos > .i {
-  width: 15px;
-  height: 15px;
-  color: var(--accent-text);
+.hint-grupo.warn {
+  color: #f59e0b;
 }
-.herr-grupos input {
-  width: 64px;
-  padding: 5px 8px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  text-align: center;
+.modal-list li.en-grupo {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: var(--accent-soft);
 }
-.herr-grupos .btn-ghost {
-  padding: 5px 12px;
-  font-size: 12.5px;
-}
-.herr-grupos .link-btn {
-  margin: 0 0 0 auto;
-}
-.modal-list li.grupo-tit {
-  padding: 0 2px;
-  border: none;
-  background: none;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent-text);
-}
-.modal-list li.corte-li {
-  justify-content: center;
-  padding: 0;
-  margin: -2px 0;
-  border: none;
-  background: none;
-}
-.corte-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 12px;
+.gchip {
+  flex: none;
+  padding: 2px 8px;
   border-radius: 999px;
-  border: 1px dashed var(--soft-2-border);
-  background: transparent;
-  color: var(--muted-2);
-  font-size: 11.5px;
-  font-weight: 500;
-  opacity: 0.6;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--seg-bg);
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--seg-border);
+}
+.gchip.libre {
+  color: #f59e0b;
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+}
+@media (max-width: 480px) {
+  .bg-fila .btn-ghost {
+    margin-left: 0;
+  }
+  .gchip {
+    display: none;
+  }
+}
+
+/* ---------- Desplegables con estilo propio (como Tipografía) ---------- */
+.select select.cs-nativo {
+  position: absolute;
+  inset: auto;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.cs-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 10px 36px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  box-shadow: var(--input-shadow);
+  font-size: 14px;
+  text-align: left;
+  outline: none;
   transition: all 0.15s;
 }
-.corte-btn .i {
-  width: 12px;
-  height: 12px;
+.cs-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.corte-btn:hover,
-.corte-btn:focus-visible {
-  opacity: 1;
-  border-color: #6366f1;
+.cs-btn:hover {
+  border-color: var(--input-border-hover);
+}
+.cs-btn:focus-visible,
+.select.abierto .cs-btn {
+  background: var(--input-bg-focus);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+.select .i {
+  transition: transform 0.2s, color 0.15s;
+}
+.select.abierto .i {
+  transform: translateY(-50%) rotate(180deg);
   color: var(--accent-text);
 }
-.corte-li.activo {
-  margin: 6px 0 2px;
+.cs-pop {
+  position: fixed;
+  z-index: 200;
+  max-width: min(440px, calc(100vw - 16px));
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--input-border);
+  background: var(--pop-bg);
+  box-shadow: var(--pop-shadow);
+  animation: subir 0.15s ease;
 }
-.corte-li.activo .corte-btn {
-  opacity: 1;
-  border-style: solid;
-  border-color: #6366f1;
-  background: var(--accent-soft);
-  color: var(--accent-text);
+.cs-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font-size: 13.5px;
+  text-align: left;
+  white-space: nowrap;
+  outline: none;
+}
+.cs-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cs-item:hover,
+.cs-item:focus-visible {
+  background: var(--tab-hover-bg);
+}
+.cs-item.sel {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
   font-weight: 600;
+}
+.cs-item.sel::after {
+  content: "";
+  flex: none;
+  width: 15px;
+  height: 15px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.pb-doc .cs-btn {
+  width: auto;
+  max-width: 210px;
+  padding: 6px 30px 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+@container (max-width: 620px) {
+  .pb-doc .cs-btn {
+    max-width: 150px;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1440px), (min-width: 1024px) and (max-height: 860px) {
+  .cs-btn {
+    padding: 8px 34px 8px 11px;
+    font-size: 13.5px;
+  }
 }
