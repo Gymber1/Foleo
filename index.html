@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.5" />
+    <link rel="stylesheet" href="css/styles.css?v=2.4.6" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -53,6 +53,7 @@
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.580 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
       <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/></symbol>
+      <symbol id="i-baseline" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="m6 16 6-12 6 12"/><path d="M8 12h8"/></symbol>
       <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></symbol>
     </svg>
 
@@ -91,7 +92,10 @@
               <svg class="i"><use href="#i-sliders" /></svg><span>Básico</span>
             </button>
             <button type="button" role="tab" data-tab="formato">
-              <svg class="i"><use href="#i-type" /></svg><span>Formato</span>
+              <svg class="i"><use href="#i-type" /></svg><span>Texto</span>
+            </button>
+            <button type="button" role="tab" data-tab="fuente">
+              <svg class="i"><use href="#i-baseline" /></svg><span>Fuente</span>
             </button>
             <button type="button" role="tab" data-tab="posicion">
               <svg class="i"><use href="#i-move" /></svg><span>Posición</span>
@@ -167,6 +171,10 @@
 
             <!-- ===== Formato ===== -->
             <div class="tabpanel" data-panel="formato" role="tabpanel" hidden>
+              <div class="section-title">
+                <svg class="i accent"><use href="#i-type" /></svg>
+                <h3>Contenido del Folio</h3>
+              </div>
               <div class="grid-2">
                 <label class="field">
                   <span class="flabel">Formato <span class="help" role="button" tabindex="0" data-ayuda="Cómo se escribe el número: 1, 2, 3 · A, B, C · números romanos.">?</span></span>
@@ -246,6 +254,14 @@
                 </label>
               </div>
 
+            </div>
+
+            <!-- ===== Fuente ===== -->
+            <div class="tabpanel" data-panel="fuente" role="tabpanel" hidden>
+              <div class="section-title">
+                <svg class="i accent"><use href="#i-baseline" /></svg>
+                <h3>Estilo de la Fuente</h3>
+              </div>
               <div class="grid-2 fonts-row">
                 <div class="field">
                   <span class="flabel">Tipografía</span>
@@ -540,10 +556,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.4.5"></script>
-    <script src="js/fuentes.js?v=2.4.5"></script>
-    <script src="js/formato.js?v=2.4.5"></script>
-    <script src="js/word.js?v=2.4.5"></script>
-    <script src="js/app.js?v=2.4.5"></script>
+    <script src="js/ttc.js?v=2.4.6"></script>
+    <script src="js/fuentes.js?v=2.4.6"></script>
+    <script src="js/formato.js?v=2.4.6"></script>
+    <script src="js/word.js?v=2.4.6"></script>
+    <script src="js/app.js?v=2.4.6"></script>
   </body>
 </html>

@@ -2640,3 +2640,25 @@ body.dragover .canvas-wrap {
     height: 16px;
   }
 }
+
+/* Título de sección dentro de una pestaña: menos separación con lo que sigue */
+.tabpanel > .section-title {
+  margin-bottom: -12px;
+}
+/* En la pestaña Fuente la barra de formato va junto a la fila anterior */
+.tabpanel[data-panel="fuente"] .toolbar {
+  margin-top: -8px;
+}
+@media (max-width: 639px) {
+  .tabs {
+    gap: 2px;
+    padding: 6px;
+  }
+  .tabs button {
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 4px;
+    font-size: 11.5px;
+    letter-spacing: 0;
+  }
+}
