@@ -52,7 +52,8 @@
   const archivos = []; // { nombre, tipo, bytes, doc, paginas }
   let srcDoc = null; // documento (unido) que se muestra en la vista previa
   let numPaginas = 0;
-  let paginaActual = 0;
+  let paginaActual = 0; // índice global (sobre todos los documentos seleccionados)
+  let docVista = -1; // -1 = todos; si no, índice del documento que se está viendo
   let resultadoUrls = [];
   let ocupado = false;
   let zoom = 1;
@@ -496,9 +497,12 @@
       cargando(true, "Preparando vista previa…");
       srcDoc = lista.length === 1 ? lista[0].doc : await unirDocumentos(lista);
       numPaginas = srcDoc.getPageCount();
-      paginaActual = Math.min(paginaActual, numPaginas - 1);
+      if (docVista >= lista.length || lista.length < 2) docVista = -1;
+      const r = rangoVista();
+      paginaActual = Math.min(Math.max(paginaActual, r.ini), r.fin - 1);
     }
     pintarArchivos();
+    pintarSelectorDoc();
     actualizarUI();
     await actualizarVista();
   }
@@ -716,11 +720,12 @@
     const texto = info ? textoFolio(info.n, info.plan, info.local, info.nombre).join(" ") : "Sin folio";
     badge.textContent = porSeparado() && info ? `Doc ${info.doc + 1} · ${texto}` : texto;
     badge.title = info && porSeparado() ? `${info.nombre}: ${texto}` : texto;
-    $("inPagina").value = paginaActual + 1;
-    $("inPagina").max = numPaginas;
-    $("totalPaginas").textContent = numPaginas;
-    $("btnPrev").disabled = paginaActual <= 0;
-    $("btnNext").disabled = paginaActual >= numPaginas - 1;
+    const rv = rangoVista();
+    $("inPagina").value = paginaActual - rv.ini + 1;
+    $("inPagina").max = rv.fin - rv.ini;
+    $("totalPaginas").textContent = rv.fin - rv.ini;
+    $("btnPrev").disabled = paginaActual <= rv.ini;
+    $("btnNext").disabled = paginaActual >= rv.fin - 1;
     pintarMarcador();
 
     try {
@@ -798,11 +803,33 @@
     return paginaActual;
   }
 
+  // Páginas que se recorren en la vista previa: todas o solo las del documento elegido
+  function rangoVista() {
+    const lista = activos();
+    if (docVista < 0 || docVista >= lista.length) return { ini: 0, fin: numPaginas };
+    let ini = 0;
+    for (let k = 0; k < docVista; k++) ini += lista[k].paginas;
+    return { ini, fin: ini + lista[docVista].paginas };
+  }
+
+  function pintarSelectorDoc() {
+    const lista = activos();
+    const sel = $("selDoc");
+    $("selDocWrap").hidden = lista.length < 2;
+    sel.innerHTML = "";
+    const todos = new Option(`Todos los documentos (${lista.length})`, "-1");
+    sel.append(todos);
+    lista.forEach((a, k) => sel.append(new Option(`${k + 1}. ${a.nombre}`, String(k))));
+    sel.value = String(docVista);
+    sel.title = docVista < 0 ? "Viendo todos los documentos" : `Viendo solo: ${lista[docVista].nombre}`;
+  }
+
   function irA(p) {
     if (!numPaginas) return;
-    const nueva = Math.max(0, Math.min(numPaginas - 1, p));
+    const r = rangoVista();
+    const nueva = Math.max(r.ini, Math.min(r.fin - 1, p));
     if (nueva === paginaActual) {
-      $("inPagina").value = paginaActual + 1;
+      $("inPagina").value = paginaActual - r.ini + 1;
       return;
     }
     paginaActual = nueva;
@@ -1549,7 +1576,13 @@
   function configurarNavegacion() {
     $("btnPrev").addEventListener("click", () => irA(paginaActual - 1));
     $("btnNext").addEventListener("click", () => irA(paginaActual + 1));
-    $("inPagina").addEventListener("change", (e) => irA(parseInt(e.target.value, 10) - 1 || 0));
+    $("inPagina").addEventListener("change", (e) => irA(rangoVista().ini + (parseInt(e.target.value, 10) - 1 || 0)));
+    $("selDoc").addEventListener("change", (e) => {
+      docVista = Number(e.target.value);
+      if (docVista >= 0) paginaActual = rangoVista().ini; // "Todos" conserva la página que se estaba viendo
+      pintarSelectorDoc();
+      actualizarVista();
+    });
     $("btnZoomMenos").addEventListener("click", () => cambiarZoom(-1));
     $("btnZoomMas").addEventListener("click", () => cambiarZoom(1));
     $("zoomValor").addEventListener("click", () => cambiarZoom(0));

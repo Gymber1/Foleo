@@ -2921,3 +2921,38 @@ body.modal-abierto {
   width: 16px;
   height: 16px;
 }
+
+/* ---------- Selector de documento en la vista previa ---------- */
+.preview {
+  container-type: inline-size;
+}
+.pb-doc select {
+  width: auto;
+  max-width: 210px;
+  padding: 6px 30px 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+.pb-doc .i {
+  right: 9px;
+  width: 14px;
+  height: 14px;
+}
+.preview-bar .pb-nav {
+  margin: 0 auto;
+}
+.preview-bar .pb-nav[hidden] ~ .zoom {
+  margin-left: auto;
+}
+@container (max-width: 820px) {
+  .pb-title h3 {
+    display: none;
+  }
+}
+@container (max-width: 620px) {
+  .pb-doc select {
+    max-width: 150px;
+  }
+}

@@ -18,7 +18,7 @@
         if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
       } catch (e) {}
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=2.4.9" />
+    <link rel="stylesheet" href="css/styles.css?v=2.5.0" />
   </head>
   <body>
     <!-- Iconos (Lucide) -->
@@ -518,6 +518,10 @@
             <button type="button" class="zbtn" id="btnNext" title="Página siguiente (→)"><svg class="i"><use href="#i-chevron-right" /></svg></button>
             <span class="badge" id="badgeFolio"></span>
           </div>
+          <span class="select pb-doc" id="selDocWrap" hidden>
+            <select id="selDoc" aria-label="Documento que se muestra en la vista previa"></select>
+            <svg class="i"><use href="#i-chevron-down" /></svg>
+          </span>
           <div class="zoom">
             <button type="button" class="zbtn" id="btnZoomMenos" title="Alejar">-</button>
             <button type="button" class="zval" id="zoomValor" title="Volver a 100%">100%</button>
@@ -600,10 +604,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="js/ttc.js?v=2.4.9"></script>
-    <script src="js/fuentes.js?v=2.4.9"></script>
-    <script src="js/formato.js?v=2.4.9"></script>
-    <script src="js/word.js?v=2.4.9"></script>
-    <script src="js/app.js?v=2.4.9"></script>
+    <script src="js/ttc.js?v=2.5.0"></script>
+    <script src="js/fuentes.js?v=2.5.0"></script>
+    <script src="js/formato.js?v=2.5.0"></script>
+    <script src="js/word.js?v=2.5.0"></script>
+    <script src="js/app.js?v=2.5.0"></script>
   </body>
 </html>
